@@ -32,6 +32,10 @@ def get_short_links(channel_url, max_videos=None):
         if 'entries' in result:
             video_entries = result['entries'][:max_videos] if max_videos else result['entries']
             channel_name = result.get('uploader', channel_username)
+
+            # Urutkan berdasarkan tanggal upload (dari yang terlama ke terbaru)
+            video_entries = sorted(video_entries, key=lambda v: v.get('upload_date', '99999999'))
+
             return video_entries, channel_name
         else:
             print("No videos found on the channel.")
@@ -42,7 +46,6 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
     filename = f"{index+1:02d} - {video_title}.{file_format}"
     file_path = os.path.join(output_path, filename)
 
-    # Cek jika file sudah ada
     if os.path.exists(file_path):
         print(f"Skipping (Already exists): {file_path}")
         return True
@@ -55,7 +58,6 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
             )
             print(f"Downloaded successfully: {video_url}")
 
-            # Simpan caption
             caption_text = f"{video_title} #shorts #vtuber #hololive\n\nYoutube: {channel_name}"
             caption_file = os.path.join(output_path, f"{index+1:02d} - {video_title}.txt")
             with open(caption_file, 'w', encoding='utf-8') as f:
@@ -64,7 +66,7 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
             return True
         except subprocess.CalledProcessError:
             print(f"Retrying {video_url} ({attempt}/{MAX_RETRIES})...")
-            time.sleep(2 ** attempt)  # Retry dengan delay eksponensial
+            time.sleep(2 ** attempt)
 
     print(f"Failed to download: {video_url}")
     return False
