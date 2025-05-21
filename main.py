@@ -122,7 +122,7 @@ def main():
         print("No videos found or failed to fetch links.")
         return
 
-    output_directory = os.path.join(os.getcwd(), "downloads")
+    output_directory = os.path.join(os.getcwd(), "downloads_cut")
     os.makedirs(output_directory, exist_ok=True)
 
     print("\nVideo Preview:")

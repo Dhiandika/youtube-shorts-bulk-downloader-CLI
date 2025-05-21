@@ -1,6 +1,7 @@
 import os
 import glob
 import re
+import argparse
 
 def get_sorted_files(directory, ascending=True):
     files = glob.glob(os.path.join(directory, "*.mp4")) + glob.glob(os.path.join(directory, "*.webm"))
@@ -10,18 +11,14 @@ def get_sorted_files(directory, ascending=True):
     return [f[0] for f in sorted_files]
 
 def clean_filename(name):
-    # Hapus angka dan strip awal jika ada
-    cleaned_name = re.sub(r'^\d+\s*-\s*', '', name)
-    return cleaned_name
+    return re.sub(r'^\d+\s*-\s*', '', name)  # Hapus angka dan strip awal jika ada
 
 def rename_files(directory, ascending=True):
     sorted_files = get_sorted_files(directory, ascending)
     
     for index, file_path in enumerate(sorted_files, start=1):
-        base_name = os.path.splitext(os.path.basename(file_path))[0]
-        ext = os.path.splitext(file_path)[1]
+        base_name, ext = os.path.splitext(os.path.basename(file_path))
         
-        # Bersihkan nama dari angka tambahan
         new_base_name = clean_filename(base_name)
         new_name = f"{index:02d} - {new_base_name}{ext}"
         new_path = os.path.join(directory, new_name)
@@ -37,16 +34,25 @@ def rename_files(directory, ascending=True):
             print(f"Renamed: {txt_file_old} -> {txt_file_new}")
 
 def main():
-    directory = input("Enter the directory containing videos: ").strip()
-    order = input("Sort from oldest to newest? (y/n): ").strip().lower()
-    ascending = order == 'y'
+    parser = argparse.ArgumentParser(description="Sort and rename video files in a directory.")
+    parser.add_argument("directory", nargs="?", help="Path to the directory containing videos")
+    parser.add_argument("--desc", action="store_true", help="Sort from newest to oldest (default is oldest to newest)")
     
-    if not os.path.exists(directory):
-        print("Directory does not exist!")
+    args = parser.parse_args()
+    
+    if not args.directory:
+        args.directory = input("Enter the directory containing videos: ").strip()
+    
+    ascending = not args.desc
+    
+    if not os.path.exists(args.directory):
+        print("Error: Directory does not exist!")
+        print("Hint: Make sure the directory path is correct and accessible.")
         return
     
-    rename_files(directory, ascending)
+    rename_files(args.directory, ascending)
     print("Sorting and renaming completed!")
+    print("Hint: Use --desc if you want to sort from newest to oldest.")
 
 if __name__ == "__main__":
     main()
