@@ -8,6 +8,7 @@ import traceback
 
 MAX_RETRIES = 3  # Jumlah maksimum percobaan ulang jika gagal
 
+
 def get_short_links(channel_url, max_videos=None):
     ydl_opts = {
         'quiet': True,
@@ -21,12 +22,6 @@ def get_short_links(channel_url, max_videos=None):
             channel_url = f'https://www.youtube.com/@{channel_username}/shorts'
         else:
             channel_url = channel_url.split('/about')[0]
-            channel_url = channel_url.split('/community')[0]
-            channel_url = channel_url.split('/playlist')[0]
-            channel_url = channel_url.split('/playlists')[0]
-            channel_url = channel_url.split('/streams')[0]
-            channel_url = channel_url.split('/featured')[0]
-            channel_url = channel_url.split('/videos')[0]
             channel_url += '/shorts'
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -48,13 +43,16 @@ def get_short_links(channel_url, max_videos=None):
             log_file.write(f"Error fetching video list from {channel_url}:\n{tb}\n")
         return [], ""
 
+
 def get_existing_index(output_path):
     files = os.listdir(output_path)
     indexes = [int(f.split(' - ')[0]) for f in files if f.split(' - ')[0].isdigit()]
     return max(indexes, default=0)
 
+
 def sanitize_filename(title):
     return "".join(c if c.isalnum() or c in " -_()" else "_" for c in title)
+
 
 def download_video(video_id, video_title, output_path, channel_name, quality, file_format, index):
     video_url = f"https://www.youtube.com/shorts/{video_id}"
@@ -84,7 +82,6 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                 check=True
             )
 
-            # Validasi file setelah unduh
             if not os.path.exists(file_path) or os.path.getsize(file_path) < 1000:
                 raise Exception("Downloaded file is too small or missing, might be corrupted.")
 
@@ -100,18 +97,15 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                 log_file.write(error_msg + "\n")
             time.sleep(2 ** attempt)
 
-            # Jika file korup tercipta, hapus
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
                     print(f"Corrupted file deleted: {file_path}")
                 except Exception as cleanup_err:
                     print(f"Failed to delete corrupted file: {file_path}\n{cleanup_err}")
-        else:
-            continue  # only reached if try block failed
-        return False  # exit early if max retries reached
+    else:
+        return False
 
-    # Buat file caption
     caption_text = f"{video_title} #shorts #vtuber #hololive\n\nYoutube: {channel_name}"
     caption_file = os.path.join(output_path, f"{index:02d} - {safe_title} - {safe_channel}.txt")
     if not os.path.exists(caption_file):
@@ -150,10 +144,10 @@ def download_videos(video_entries, output_path, channel_name, quality, file_form
 
     progress_bar.close()
 
+
 def main():
     channel_url = input("Enter the YouTube channel URL: ").strip()
 
-    # Ambil semua video untuk preview jumlah total
     print("Fetching video list for preview...")
     all_video_entries, channel_name = get_short_links(channel_url)
 
@@ -176,7 +170,6 @@ def main():
     max_videos = input(f"Enter the number of videos to download (1-{len(all_video_entries)}), leave blank for all: ").strip()
     max_videos = int(max_videos) if max_videos.isdigit() else None
 
-    # Dapatkan ulang hanya sejumlah yang ingin di-download
     video_entries, _ = get_short_links(channel_url, max_videos)
     if not video_entries:
         print("No videos found or failed to fetch links.")
@@ -188,7 +181,7 @@ def main():
     file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
     file_format = file_format if file_format in ['mp4', 'webm'] else 'mp4'
 
-    output_directory = os.path.join(os.getcwd(), "video_cut") #file output folder derectory video
+    output_directory = os.path.join(os.getcwd(), "video_cut")
     os.makedirs(output_directory, exist_ok=True)
 
     print("\nVideo to Download:")
