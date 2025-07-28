@@ -1,13 +1,15 @@
-# To run this code you need to install the following dependencies:
-# pip install google-genai
-
-import base64
 import os
-import glob # Added for finding files
+import glob
+import time
+import logging
+import re
 from google import genai
-from google.genai import types
+from google.api_core import exceptions as genai_exceptions
+from google.genai.types import Content, Part, GenerateContentConfig
 
-# The detailed system instruction provided by the user
+
+
+
 SYSTEM_INSTRUCTION_TEXT = """System Instruction: Social Media Caption Generator for Hololive Talents
 Role: You are a social media content assistant specialized in crafting engaging captions for posts about Hololive talents under Hololive Production (xAI's Grok 3, adapted for this task). Your goal is to create concise, creative, and informative captions that highlight a Hololive talent's unique traits, fun facts, or recent activities, paired with relevant hashtags for maximum visibility and fan engagement.
 Guidelines:
@@ -985,103 +987,290 @@ Hololive: Hololive Production stands as a leading VTuber agency, expertly managi
 #GigiMurin #holoJustice #hololiveEN #hololive #VTuber #Justice #GigiGang #Gremlin #Art #Gaming #HololiveEnglish #CeciliaImmergreen #Cogs #Music #Android #MoriCalliope #holoMyth #Reaper #Myth #Deadbeats #VirtualYouTuber #HololiveProduction #Entertainment
 
 
+informasi character talent tambahan graduated:
+Ceres fauna: Nimi Nightmare, yang juga dikenal sebagai *Nurse Nimi*, adalah seorang VTuber independen dengan persona unik "baku nurse" yang bertugas mengonsumsi mimpi buruk, memulai debut resminya pada 17 Januari 2025 melalui saluran YouTube (yang sebelumnya merupakan channel VTuber ASMR LemonLeaf dan kemudian di-rebrand menjadi @niminightmare), serta aktif di Twitter dan Bluesky. Sebagai perempuan kelahiran 10 Oktober berzodiak Libra, Nimi memiliki tinggi 158 cm dalam bentuk full-size dan 10 cm dalam bentuk chibi, dengan basis penggemar yang disebut *Naplings* (diwakili makhluk mimpi buruk) dan emoji fandom khusus. Awalnya tampil dalam model chibi dengan ciri khas bintik putih di telinga layaknya bayi tapir, ia kemudian mendebutkan model full-size pada 22 April 2025 yang dirancang oleh Tōsaka Asagi, menampilkan berbagai setting emosi, mode "bald" unik, dan ciri khas empat telinga (dua baku di atas, dua manusia di samping) serta pipa penyerap mimpi buruk dengan skema warna dominan hijau, di mana lore-nya menjelaskan perubahan ukuran ini akibat ia pernah kecanduan video game hingga lalai tugasnya, lalu menyusut, namun kembali ke ukuran penuh setelah mengonsumsi cukup mimpi buruk. Perjalanan kariernya ditandai dengan pertumbuhan subscriber yang sangat pesat (mencapai 400.000 dalam beberapa hari, lalu 500.000, dan 600.000 saat debut full-size), peluncuran merchandise seperti plush dan stiker yang laris manis, serta sebuah charity stream monumental bertajuk *Baby Bean's Charity Bash* pada 21 Maret 2025, sebuah siaran delapan jam untuk mengenang kucing kesayangannya, Baby Bean (yang meninggal 9 Maret 2025), yang berhasil mengumpulkan $361.017,03 untuk St. Jude Children's Research Hospital dan mencetak rekor penggalangan dana VTuber. Nimi memiliki preferensi makanan seperti es krim strawberry dan chocolate chip cookie dough (lebih memilih vanilla daripada cokelat) dan dark chocolate, serta trivia unik seperti pengakuannya menyukai rasa cartridge Nintendo Switch; empat akun Twitter pertama yang diikutinya termasuk Isabelle dari Animal Crossing dan Nintendo, dan secara lore ia memiliki "komposisi etnis" 63,2% British & Irish. Selain Baby Bean, ia memiliki dua kucing adopsi, Luna (mata hijau) dan Artemis (mata kuning), yang sering muncul di siaran, dan tapir sebagai maskotnya. Meskipun ada spekulasi apakah ia akan bergabung dengan VShojo (yang kemudian memilih AmaLee, persona LemonLeaf sebelumnya), Nimi menegaskan debutnya sebagai independen, sementara Tōsaka Asagi, ilustrator modelnya, juga dikenal berkarya untuk VTuber dari agensi besar. Interaksi dengan penggemarnya sangat hidup, didukung tagar seperti #nimagery dan #nimemes, melalui berbagai konten seperti streaming game (Elden Ring, Blue Prince, RimWorld), karaoke, dan sesi menggambar, yang semuanya membangun persona ikonik dan autentik di industri VTuber yang berkembang.
+
+
+amelia watson:
+Dooby3D, seorang VTuber independen berbahasa Inggris juga dikenal dengan panggilan doob, doobert, atau doobious, memulai debutnya pada 25 Oktober 2024 di Twitch dan YouTube, platform di mana ia sudah memiliki akun sejak 2014 dan 2010 secara berturut-utut, dan sempat melakukan streaming sporadis sebelum debut VTuber-nya. Karakternya, seorang jerboa yang berubah menjadi manusia setelah terkena bintang jatuh, memiliki mata hijau, rambut pirang pendek dengan ahoge hitam, serta ekor panjang jerboa, dan digambarkan mengenakan seragam konduktor kereta (kemeja putih, overall biru bergaris, dasi hijau, topi biru) lengkap dengan kacamata pelindung, sarung tangan putih, dan peluit uap yang mengeluarkan asap saat ia berbicara keras atau cegukan; desain ini diilustrasikan oleh Oro dengan model 3D oleh Yoolie. Ia aktif di Twitter, Bluesky, dan memiliki situs resmi dooby3d.tv, dengan emoji khas 🚃💨💨 dan penggemar Twitch yang disebut “roingus club” (nama penggemar resmi belum diputuskan). Lore-nya menyebutkan ia streaming dari kereta di padang pasir, menemukan seragam konduktor yang sebelumnya milik kappa bernama Kippu (yang diduga bertanggung jawab atas transformasinya), dan goggle-nya dapat menampilkan informasi serta mengunduh data ke otaknya, sementara ia juga memiliki kontroler di pergelangan tangan. Debutnya sangat sukses, mencapai lebih dari 47.000 penonton di YouTube dan 12.400 di Twitch (dengan stream lanjutan pasca-gangguan koneksi yang diramaikan oleh Filian mencapai lebih dari 20.000 penonton di Twitch), setelah sebelumnya telah mengumpulkan 100.000 subscribers YouTube. Pertumbuhannya pesat, mencapai 200.000 subscribers YouTube pada 26 Oktober dan 300.000 YouTube subscribers serta 100.000 followers Twitch pada 28 Oktober. Dooby dikenal dengan kepribadiannya yang penuh energi, ramah, dan gaya bicara unik, dengan kutipan populer seperti *"It is Wednesday my doobs!"* dan *"Doob morning!"*. Ia berpartisipasi dalam konser Fantome Thief's Revenge pada 14 Desember 2024 bersama Dokibird dan Mint Fantôme, menampilkan tarian dan nyanyian dalam model 3D. Trivia menarik lainnya termasuk nama "Doob" yang menyerupai wajah (º﹃º), nama "Dooby" yang awalnya dipilih untuk Steam, nama alternatif yang dipertimbangkan "Locomochi", memiliki dua anjing (Bubbles dan Nikita), serta adik dan kakak laki-laki. Ia berasal dari keturunan Kuba, Chili, dan Pribumi, dapat berbicara Bahasa Spanyol, pernah bekerja sebagai foley artist di acara peraih Emmy (meski tidak mendapat penghargaan pribadi), memiliki setup streaming dengan hanging bars dan kamera senilai sekitar $19.000, makanan favoritnya adalah applesauce, warna favoritnya hijau, seragamnya terinspirasi dari Golden Kamuy dan Girls' Last Tour, dan model Live2D-nya sedang dalam pengembangan.
+
+
+Sameko Saba Overview
+Sameko Saba is an independent VTuber who debuted on June 28, 2025. She gained major attention before debut, reaching 500,000 YouTube subscribers, and set the record for fastest VTuber to hit 1 million subscribers, achieving this in under 3 days (2 days 17 hours).
+
+Introduction Video
+Titled: 【VTUBER DEBUT】yoho! 🐟 i'm saba!
+
+A whimsical intro marking her official debut.
+
+Personality
+Cute, whimsical, and forgetful.
+
+Tends to ramble and say random, funny things.
+
+Appearance
+Long blonde hair with ocean-blue highlights and beach-themed hair ties.
+
+Bright cyan blue eyes, shark tail, and fuzzy animal ears (4 ears in total—animal and human).
+
+Wears a white shirt dress with blue trim, sailor-style collar, and white shorts underneath.
+
+Accessories include a light blue bow with a gold paper boat and a paper boat hairclip, symbolizing fragility and resilience.
+
+History
+Background
+Twitter account created: 11 January 2025
+
+YouTube channel created: 4 May 2025
+
+Trademark filed in the US on 2 May 2025 for entertainment and merchandise.
+
+First video posted on 18 May: a short song titled saba / saba
+
+Viral growth:
+
+100k followers & subscribers within 8 hours of first tweet (19 May: "yoho..!🐟")
+
+250k subscribers by 20 May
+
+Debut (28 June 2025)
+Reached 500k subs before debut.
+
+Debut stream had 200k+ peak viewers.
+
+Opened YouTube Memberships (FISH LOVE) pre-debut; many joined.
+
+Announced merch drop with OMOCAT, which sold out in under 10 minutes.
+
+Surpassed 600k subs before end of stream.
+
+Milestones After Debut
+29 June: Reached 800,000 subscribers
+
+1 July: Hit 1,000,000 subscribers (record-breaking)
+
+Beat Hyakumantenbara Salome’s 13-day record from 2022
+
+Mascot and Fans
+Mascot: A small red crab with a white underbelly that brings her seashells.
+
+Represents her fanbase.
+
+Membership name: FISH LOVE
+
+Relationships
+Known to be friends with dooby3D, a fellow independent VTuber.
+
+Quotes
+"yoho..!🐟"
+
+"Pey-pah-boat." (Paper boat)
+
+"I'm a certified fish. Do you have a certificate? Maybe for being a bozo."
+
+"Is a kleptomanic someone who steals? I don't steal. I collect."
+
+"I'm not a chihuahua by the way."
+
+Trivia
+Name
+“Saba” = mackerel in Japanese; also slang for "server"
+
+“Sameko” = resembles “shark girl” or “little shark” in Japanese
+
+Official translation: "little shark mackerel"
+
+Lore
+Lives in an old lighthouse by the sea
+
+Collects seashells
+
+Is a fish girl with four ears (animal + human)
+
+Likes and Dislikes
+Loves rhythm games and retro games (plays on original hardware)
+
+Drinks a lot of coffee
+
+Plans to release original music in multiple genres
+
+Miscellaneous
+First followed accounts: Ordan, dooby3D, and Senzawa
+
+Also followed VTubers and illustrators: Nimi Nightmare, Nachoneko, Sameanko, and Tousaki Shiina
+
+Basic Details
+Nickname: Mack the Fish Girl
+
+Debut Date: June 28, 2025
+
+Character Designer: Shouu
+
+Illustrator: Tousaki Shiina
+
+Rigging: cillia and Cwunchy
+
+Personal Details
+Gender: Female
+
+Birthday: 20 June
+
+Height: 35 cm (1'2")
+
+Zodiac Sign: Gemini
+
+Emoji: 🐟
+
+Media Presence
+YouTube Channel
+
+Twitter Account
+
 """
 
-# Changed generate function to accept prompt_text and api_key, and return generated text
+
+DOWNLOADS_FOLDER = "new_week"
+LOG_FILE = "caption_generator.log"
+CHECKPOINT_FILE = "checkpoint.log"
+MODEL = "gemini-2.0-flash-lite"
+RETRIES = 3
+RETRY_DELAY = 5
+
+# === LOGGING ===
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
+                    format='%(asctime)s [%(levelname)s] %(message)s')
+
+def extract_number(filename: str) -> int:
+    match = re.search(r'\d+', filename)
+    return int(match.group()) if match else float('inf')
+
+# === GENERATE ===
 def generate(prompt_text: str, api_key: str) -> str | None:
-    client = genai.Client(
-        api_key=api_key, # Use the provided API key
-    )
+    client = genai.Client(api_key=api_key)
 
-    model = "gemini-2.0-flash-lite"
-
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text="""IRYS Was In Pure Laughter Because of This Superchat #shorts #vtuber #hololive #shorts #vtuber #hololive
-
-Youtube: Hololive Simposting"""),
-            ]
-        ),
-        types.Content(
-            role="model",
-            parts=[
-                types.Part.from_text(text="""IRyS Cracks Up at a Hilarious Superchat! 😂🤣 Watch IRyS from Hololive English burst into laughter thanks to a particularly funny superchat! Her reactions are the best. Did you know IRyS is known for her beautiful singing and her ability to bring joy to her fans?
+    try:
+        contents = [
+            Content(role="user", parts=[
+                Part(text="hapus penggunakan kata caption di awal, IRYS Was In Pure Laughter Because of This Superchat #shorts #vtuber #hololive\n\nYoutube: Hololive Simposting")
+            ]),
+            Content(role="model", parts=[
+                Part(text="""IRyS Cracks Up at a Hilarious Superchat! 😂🤣 Watch IRyS from Hololive English burst into laughter thanks to a particularly funny superchat! Her reactions are the best. Did you know IRyS is known for her beautiful singing and her ability to bring joy to her fans?
 
 IRyS: Introducing IRyS, the charming Nephilim from Hololive English -Project: HOPE-! 😇✨ She is known for her amazing singing voice and sweet personality.
 
 Clip Source: Hololive Simposting
 
-#IRyS #hololiveEN #hololive #VTuber #hololiveEnglish #ProjectHope #Superchat #Funny #Laughter #Shorts #VTuberShorts #Clip #IRyStocrats #Singing #hololiveClips #Gaming #VirtualYoutuber #Reactions #Fun #Anime #EnglishVTuber"""),
-            ]
-        ),
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text=prompt_text),
-            ],
-        ),
-    ]
+#IRyS #hololiveEN #hololive #VTuber #hololiveEnglish #ProjectHope #Superchat #Funny #Laughter #Shorts #VTuberShorts #Clip #IRyStocrats #Singing #hololiveClips #Gaming #VirtualYoutuber #Reactions #Fun #Anime #EnglishVTuber""")
+            ]),
+            Content(role="user", parts=[Part(text=prompt_text)])
+        ]
 
-    generate_content_config = types.GenerateContentConfig(
-        response_mime_type="text/plain",
-        system_instruction=[
-            types.Part.from_text(text=SYSTEM_INSTRUCTION_TEXT),
-        ],
-    )
-
-    generated_text_parts = []
-    try:
-        stream = client.models.generate_content_stream(
-            model=model,
-            contents=contents,
-            config=generate_content_config,
+        config = GenerateContentConfig(
+            response_mime_type="text/plain",
+            system_instruction=[Part(text=SYSTEM_INSTRUCTION_TEXT)],
         )
-        for chunk in stream:
-            generated_text_parts.append(chunk.text)
-        return "".join(generated_text_parts)
-    except Exception as e:
-        print(f"An error occurred during content generation for a prompt: {e}")
-        return None # Return None if generation fails
 
+        stream = client.models.generate_content_stream(
+            model=MODEL,
+            contents=contents,
+            config=config,
+        )
+
+        return "".join(chunk.text for chunk in stream)
+
+    except genai_exceptions.GoogleAPICallError as e:
+        logging.error(f"Google API error: {e}")
+    except Exception as e:
+        logging.exception("Unexpected error")
+    return None
+
+def generate_with_retry(prompt_text: str, api_key: str) -> str | None:
+    for attempt in range(1, RETRIES + 1):
+        result = generate(prompt_text, api_key)
+        if result:
+            return result
+        print(f"⚠️ Retry {attempt}/{RETRIES} in {RETRY_DELAY}s...")
+        time.sleep(RETRY_DELAY)
+    return None
+
+def save_checkpoint(filename: str):
+    with open(CHECKPOINT_FILE, 'a', encoding='utf-8') as f:
+        f.write(filename + '\n')
+
+def load_checkpoint() -> set:
+    if not os.path.exists(CHECKPOINT_FILE):
+        return set()
+    with open(CHECKPOINT_FILE, 'r', encoding='utf-8') as f:
+        return set(line.strip() for line in f)
+
+# === MAIN ===
+def main():
+    print("📂 Hololive Caption Generator with Range & Checkpoint\n")
+
+    api_key = input("🔑 Enter your Gemini API Key: ").strip()
+    if not api_key:
+        print("❌ API key is required.")
+        return
+
+    if not os.path.isdir(DOWNLOADS_FOLDER):
+        print(f"❌ Folder '{DOWNLOADS_FOLDER}' not found.")
+        return
+
+    txt_files = sorted(glob.glob(os.path.join(DOWNLOADS_FOLDER, "*.txt")),
+                       key=lambda x: extract_number(os.path.basename(x)))
+    total_files = len(txt_files)
+
+    if total_files == 0:
+        print("❌ No .txt files found.")
+        return
+
+    print(f"📦 Total .txt files detected: {total_files}")
+    range_input = input("🔢 Enter range to process (e.g., 50-100): ").strip()
+    match = re.match(r"(\d+)-(\d+)", range_input)
+    if not match:
+        print("❌ Invalid range format. Use start-end (e.g., 50-100).")
+        return
+
+    start_idx, end_idx = int(match.group(1)), int(match.group(2))
+    if start_idx < 1 or end_idx > total_files or start_idx > end_idx:
+        print(f"❌ Invalid range. Must be between 1 and {total_files}")
+        return
+
+    checkpoint = load_checkpoint()
+
+    # Adjust for 0-based indexing
+    selected_files = txt_files[start_idx - 1:end_idx]
+
+    print(f"\n🚀 Processing files {start_idx} to {end_idx}...\n")
+
+    for idx, file_path in enumerate(selected_files, start=start_idx):
+        filename = os.path.basename(file_path)
+        if filename in checkpoint:
+            print(f"[{idx}] ⏭️ Skipped (already processed): {filename}")
+            continue
+
+        print(f"[{idx}] 🔄 Processing: {filename}")
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+
+            if not content:
+                print(f"  ⚠️ Skipped empty file: {filename}")
+                continue
+
+            new_content = generate_with_retry(content, api_key)
+            if new_content:
+                with open(file_path, 'w', encoding='utf-8') as f_out:
+                    f_out.write(new_content)
+                save_checkpoint(filename)
+                print(f"  ✅ Updated: {filename}")
+            else:
+                print(f"  ❌ Failed to generate: {filename}")
+                logging.error(f"Failed to generate caption for: {filename}")
+
+        except Exception as e:
+            print(f"  ❌ Error on {filename}: {e}")
+            logging.exception(f"Error processing {filename}")
 
 if __name__ == "__main__":
-    downloads_folder = "captioning"
-    
-    api_key_input = input("Please paste your Gemini API Key and press Enter: ").strip()
-
-    if not api_key_input:
-        print("Error: No API key provided. Exiting.")
-    elif not os.path.isdir(downloads_folder):
-        print(f"Folder '{downloads_folder}' not found. Please create it and add .txt files.")
-    else:
-        txt_files = glob.glob(os.path.join(downloads_folder, "*.txt"))
-
-        if not txt_files:
-            print(f"No .txt files found in '{downloads_folder}'.")
-        else:
-            print(f"Found {len(txt_files)} .txt file(s) in '{downloads_folder}'. Processing...")
-            for txt_file_path in txt_files:
-                original_filename = os.path.basename(txt_file_path)
-                print(f"Processing file: {original_filename}")
-                try:
-                    with open(txt_file_path, 'r', encoding='utf-8') as f:
-                        file_content = f.read().strip()
-                    
-                    if not file_content:
-                        print(f"Skipping empty file: {original_filename}\n")
-                        continue
-
-                    print(f"  Generating new content for: {original_filename}")
-                    new_content = generate(file_content, api_key_input)
-
-                    if new_content:
-                        with open(txt_file_path, 'w', encoding='utf-8') as f_out:
-                            f_out.write(new_content)
-                        print(f"  Successfully updated file: {original_filename}\n")
-                    else:
-                        print(f"  Failed to generate content for {original_filename}. File not updated.\n")
-                        
-                except Exception as e:
-                    print(f"An error occurred while processing file {original_filename}: {e}\n")
+    main()

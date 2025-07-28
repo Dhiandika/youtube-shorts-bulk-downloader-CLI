@@ -51,7 +51,9 @@ def get_existing_index(output_path):
 
 
 def sanitize_filename(title):
-    return "".join(c if c.isalnum() or c in " -_()" else "_" for c in title)
+    import re
+    # Hanya huruf, angka, spasi, dan karakter aman
+    return re.sub(r'[^a-zA-Z0-9 _\-\(\)\[\]]+', '_', title).strip()
 
 
 def download_video(video_id, video_title, output_path, channel_name, quality, file_format, index):
@@ -74,6 +76,7 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
 
             cmd.append(video_url)
 
+            # Jalankan perintah yt-dlp
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -87,14 +90,20 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
 
             print(f"Downloaded successfully: {video_url}")
             break
-        except Exception as e:
+
+        except subprocess.CalledProcessError as e:
             error_msg = (
                 f"Attempt {attempt} failed for {video_url}\n"
-                f"Error: {e}\n"
+                f"Command: {' '.join(cmd)}\n"
+                f"Return Code: {e.returncode}\n"
+                f"STDOUT:\n{e.stdout}\n"
+                f"STDERR:\n{e.stderr}\n"
             )
             print(error_msg)
+
             with open("download_errors.log", "a", encoding="utf-8") as log_file:
                 log_file.write(error_msg + "\n")
+
             time.sleep(2 ** attempt)
 
             if os.path.exists(file_path):
@@ -103,9 +112,19 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                     print(f"Corrupted file deleted: {file_path}")
                 except Exception as cleanup_err:
                     print(f"Failed to delete corrupted file: {file_path}\n{cleanup_err}")
+        except Exception as e:
+            error_msg = (
+                f"Attempt {attempt} failed for {video_url}\n"
+                f"General Error: {e}\n"
+            )
+            print(error_msg)
+            with open("download_errors.log", "a", encoding="utf-8") as log_file:
+                log_file.write(error_msg + "\n")
+            time.sleep(2 ** attempt)
     else:
         return False
 
+    # Simpan caption deskripsi
     caption_text = f"{video_title} #shorts #vtuber #hololive\n\nYoutube: {channel_name}"
     caption_file = os.path.join(output_path, f"{index:02d} - {safe_title} - {safe_channel}.txt")
     if not os.path.exists(caption_file):
@@ -119,6 +138,7 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                 log_file.write(f"Error creating caption for {video_url}:\n{e}\n")
 
     return True
+
 
 
 def download_videos(video_entries, output_path, channel_name, quality, file_format):
@@ -181,7 +201,7 @@ def main():
     file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
     file_format = file_format if file_format in ['mp4', 'webm'] else 'mp4'
 
-    output_directory = os.path.join(os.getcwd(), "video_cut")
+    output_directory = os.path.join(os.getcwd(), "new_week")
     os.makedirs(output_directory, exist_ok=True)
 
     print("\nVideo to Download:")

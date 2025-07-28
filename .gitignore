@@ -2,3 +2,7 @@ downloads
 downloads_cut
 video_cut
 download_errors.log
+.env
+caption_generator.log
+checkpoint.log
+new_week
