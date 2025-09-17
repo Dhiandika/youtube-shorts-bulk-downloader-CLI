@@ -235,11 +235,21 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                 '--quiet',  # Make output cleaner
                 '--no-check-certificates',  # Avoid SSL issues
                 '--ignore-errors',  # Continue on errors
-                '--no-playlist'  # Ensure single video download
+                '--no-playlist',  # Ensure single video download
+                '--extractor-args', 'youtube:player_client=android',  # Use mobile client for better compatibility
+                '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'  # Use desktop user agent
             ]
 
-            if quality != 'best':
-                cmd.extend(['-f', quality])
+            # Use different format selection based on quality
+            if quality == 'best':
+                # For best quality, let yt-dlp choose the best available format
+                cmd.extend(['-f', 'best[ext=mp4]/best'])
+            elif quality == 'worst':
+                # For worst quality, get the smallest file
+                cmd.extend(['-f', 'worst[ext=mp4]/worst'])
+            else:
+                # For specific quality, try the requested format first, then fallback
+                cmd.extend(['-f', f'{quality}+bestaudio/best[ext=mp4]/best'])
 
             cmd.append(video_url)
 
@@ -280,6 +290,48 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
             with open("download_errors.log", "a", encoding="utf-8") as log_file:
                 log_file.write(error_msg + "\n")
 
+            # Check if it's a format availability issue
+            if "Requested format is not available" in e.stderr or "HTTP Error 403" in e.stderr:
+                print(f"Format not available for {video_url}, trying with best available format...")
+                
+                # Try with best available format
+                try:
+                    best_format = get_best_available_format(video_url)
+                    if best_format:
+                        cmd_with_best = [
+                            'yt-dlp',
+                            '--merge-output-format', file_format,
+                            '--output', file_path,
+                            '--no-warnings',
+                            '--quiet',
+                            '--no-check-certificates',
+                            '--ignore-errors',
+                            '--no-playlist',
+                            '--extractor-args', 'youtube:player_client=android',
+                            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                            '-f', best_format,
+                            video_url
+                        ]
+                        
+                        result = subprocess.run(
+                            cmd_with_best,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            check=True,
+                            timeout=300,
+                            encoding='utf-8',
+                            errors='replace'
+                        )
+                        
+                        if os.path.exists(file_path) and os.path.getsize(file_path) >= 1000:
+                            print(f"Downloaded successfully with best available format: {video_url}")
+                            return True
+                    else:
+                        print(f"Could not determine best format for {video_url}")
+                except Exception as format_error:
+                    print(f"Best format download also failed: {format_error}")
+
             # Try with a simpler filename if the original fails
             if attempt == MAX_RETRIES:
                 try:
@@ -294,13 +346,11 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
                         '--quiet',
                         '--no-check-certificates',
                         '--ignore-errors',
-                        '--no-playlist'
+                        '--no-playlist',
+                        '--extractor-args', 'youtube:player_client=android',
+                        '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        '-f', 'best[ext=mp4]/best'
                     ]
-                    
-                    if quality != 'best':
-                        simple_cmd.extend(['-f', quality])
-                    
-                    simple_cmd.append(video_url)
                     
                     print(f"Trying with simple filename: {simple_filename}")
                     result = subprocess.run(
@@ -345,6 +395,109 @@ def download_video(video_id, video_title, output_path, channel_name, quality, fi
 
     return True
 
+
+def test_video_accessibility(video_url):
+    """Test if a video is accessible before attempting download"""
+    try:
+        cmd = [
+            'yt-dlp',
+            '--no-download',
+            '--no-warnings',
+            '--quiet',
+            '--no-check-certificates',
+            '--extractor-args', 'youtube:player_client=android',
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            video_url
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        return result.returncode == 0
+    except Exception as e:
+        print(f"Error testing video accessibility: {e}")
+        return False
+
+
+def get_available_formats(video_url):
+    """Get available formats for a video"""
+    try:
+        cmd = [
+            'yt-dlp',
+            '--list-formats',
+            '--no-warnings',
+            '--quiet',
+            '--no-check-certificates',
+            video_url
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=60,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            return None
+    except Exception as e:
+        print(f"Error getting formats for {video_url}: {e}")
+        return None
+
+
+def get_best_available_format(video_url, preferred_format='mp4'):
+    """Get the best available format for a video"""
+    try:
+        cmd = [
+            'yt-dlp',
+            '--list-formats',
+            '--no-warnings',
+            '--quiet',
+            '--no-check-certificates',
+            video_url
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=60,
+            encoding='utf-8',
+            errors='replace'
+        )
+        
+        if result.returncode == 0:
+            # Parse the output to find the best available format
+            lines = result.stdout.split('\n')
+            best_format = None
+            
+            for line in lines:
+                if preferred_format in line.lower() and 'mp4' in line.lower():
+                    # Look for format ID (first number in the line)
+                    parts = line.split()
+                    if parts and parts[0].isdigit():
+                        best_format = parts[0]
+                        break
+            
+            return best_format
+        else:
+            return None
+    except Exception as e:
+        print(f"Error getting best format for {video_url}: {e}")
+        return None
 
 
 def download_videos(video_entries, output_path, channel_name, quality, file_format):
@@ -429,8 +582,25 @@ def main():
             print("No videos found or failed to fetch links.")
             return
 
-        quality = input("Enter video quality (e.g., 137+140 or best, default: best): ").strip()
-        quality = quality if quality else 'best'
+        print("\nQuality options:")
+        print("1. best - Best available quality (recommended)")
+        print("2. worst - Smallest file size")
+        print("3. 137+140 - 1080p video + audio (may not be available for all videos)")
+        print("4. 136+140 - 720p video + audio (may not be available for all videos)")
+        print("5. 135+140 - 480p video + audio (may not be available for all videos)")
+        
+        quality_input = input("Enter quality choice (1-5, default: 1): ").strip()
+        
+        quality_map = {
+            '1': 'best',
+            '2': 'worst', 
+            '3': '137+140',
+            '4': '136+140',
+            '5': '135+140'
+        }
+        
+        quality = quality_map.get(quality_input, 'best')
+        print(f"Selected quality: {quality}")
 
         file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
         file_format = file_format if file_format in ['mp4', 'webm'] else 'mp4'
