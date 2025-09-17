@@ -1,7 +1,5 @@
 import os
-import re
-from datetime import datetime, timedelta
-from typing import Optional
+import re, unicodedata
 
 __all__ = [
     "get_existing_index",
@@ -9,12 +7,16 @@ __all__ = [
     "create_safe_filename",
     "validate_filename",
     "get_unique_filename",
-    # date helpers
-    "normalize_upload_date",
-    "parse_upload_date",
-    "filter_by_age",
 ]
 
+def _ascii_only(s: str) -> str:
+    if not s:
+        return "untitled"
+    s = unicodedata.normalize("NFKD", s)
+    s = s.encode("ascii", "ignore").decode("ascii", "ignore")
+    s = re.sub(r'[<>:"/\\|?*]', '_', s)
+    s = re.sub(r'[_\s]+', '_', s).strip('_ ')
+    return s or "untitled"
 
 def get_existing_index(output_path: str) -> int:
     files = os.listdir(output_path)
@@ -22,30 +24,15 @@ def get_existing_index(output_path: str) -> int:
     return max(indexes, default=0)
 
 
+
 def sanitize_filename(title: str) -> str:
-    # Remove emoji dan karakter non-ASCII bermasalah
-    title = re.sub(r'[^\x00-\x7F]+', '', title)
-    # Ganti karakter yang bermasalah di filesystem
-    title = re.sub(r'[<>:"/\\|?*]', '_', title)
-    # Rapatkan underscore
-    title = re.sub(r'_+', '_', title)
-    # Trim
-    title = title.strip(' _')
-    # Batas panjang
-    if len(title) > 200:
-        title = title[:200]
-    return title or "untitled"
+    s = _ascii_only(title)
+    return s[:200]
+
 
 
 def create_safe_filename(title: str, max_length: int = 100) -> str:
-    # Hapus semua non-ASCII (termasuk emoji)
-    safe_title = re.sub(r'[^\x20-\x7E]', '', title)
-    safe_title = re.sub(r'[<>:"/\\|?*]', '_', safe_title)
-    safe_title = re.sub(r'[\s_]+', '_', safe_title)
-    safe_title = safe_title.strip('_')
-    if len(safe_title) > max_length:
-        safe_title = safe_title[:max_length]
-    return safe_title or "untitled"
+    return _ascii_only(title)[:max_length]
 
 
 def validate_filename(filename: str) -> bool:
@@ -70,42 +57,3 @@ def get_unique_filename(base_path: str, filename: str) -> str:
             return new_filename
         counter += 1
 
-
-# ======== Date helpers ========
-
-def normalize_upload_date(upload_date: Optional[str]) -> Optional[str]:
-    """Terima format 'YYYYMMDD' atau 'YYYY-MM-DD' -> kembalikan 'YYYY-MM-DD' atau None."""
-    if not upload_date:
-        return None
-    s = str(upload_date)
-    if len(s) == 8 and s.isdigit():
-        return f"{s[0:4]}-{s[4:6]}-{s[6:8]}"
-    try:
-        datetime.strptime(s, "%Y-%m-%d")
-        return s
-    except Exception:
-        return None
-
-
-def parse_upload_date(upload_date: Optional[str]) -> Optional[datetime]:
-    iso = normalize_upload_date(upload_date)
-    if not iso:
-        return None
-    try:
-        return datetime.strptime(iso, "%Y-%m-%d")
-    except Exception:
-        return None
-
-
-def filter_by_age(entries: list[dict], days: int) -> list[dict]:
-    """
-    Saring entries berdasarkan "days" terakhir (UTC).
-    Entry tanpa upload_date dibiarkan lolos; enrichment opsional di caller.
-    """
-    cutoff = datetime.utcnow() - timedelta(days=days)
-    kept: list[dict] = []
-    for e in entries:
-        dt = parse_upload_date(e.get('upload_date'))
-        if dt is None or dt >= cutoff:
-            kept.append(e)
-    return kept

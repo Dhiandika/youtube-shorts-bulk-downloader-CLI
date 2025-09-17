@@ -1,29 +1,49 @@
+from __future__ import annotations  # ← harus di paling atas
+
+
+
 import threading
-from typing import List, Dict
+from typing import List, Dict, Optional
 from .downloader import download_video
+import os
+from .utils import get_existing_index
+from .db import TinyStore
+from yt_short_downloader.downloader import download_videos
+from yt_short_downloader.utils import get_existing_index
+from yt_short_downloader.db import TinyStore
+
+__all__ = ["download_videos_with_db"]
 
 # Orkestrator: tidak mengubah fungsi `download_video`, hanya membungkusnya
 
-def _wrap_download(entry: Dict, output_path: str, channel_name: str, quality: str, file_format: str,
-                   index: int, channel_key: str, store) -> None:
-    ok = download_video(
-        entry['id'], entry.get('title', 'Unknown Title'), output_path,
-        channel_name, quality, file_format, index
+def download_videos_with_db(
+    video_entries: List[Dict],
+    output_path: str,
+    channel_name: str,
+    quality: str,
+    file_format: str,
+    channel_key: str,
+    store: TinyStore,
+) -> None:
+    os.makedirs(output_path, exist_ok=True)
+
+    probe = get_existing_index(output_path)
+    indices = store.reserve_indices(output_path, count=len(video_entries), fallback_probe=probe)
+
+    # callback: tandai sukses di DB
+    def _mark_ok(entry: Dict, _idx: int):
+        vid = entry.get("id")
+        if vid:
+            store.mark_downloaded(channel_key, vid)
+
+    download_videos(
+        video_entries=video_entries,
+        output_path=output_path,
+        channel_name=channel_name,
+        quality=quality,
+        file_format=file_format,
+        preassigned_indices=indices,
+        on_success=_mark_ok,   # ⬅️ penting
     )
-    if ok:
-        store.mark_downloaded(channel_key, entry['id'])
 
 
-def download_videos_with_db(video_entries: List[Dict], output_path: str, channel_name: str,
-                            quality: str, file_format: str, channel_key: str, store) -> None:
-    threads: list[threading.Thread] = []
-    # Penomoran urut sederhana; index tidak mengambil existing index dari folder.
-    for i, entry in enumerate(video_entries, start=1):
-        t = threading.Thread(
-            target=_wrap_download,
-            args=(entry, output_path, channel_name, quality, file_format, i, channel_key, store)
-        )
-        t.start()
-        threads.append(t)
-    for t in threads:
-        t.join()

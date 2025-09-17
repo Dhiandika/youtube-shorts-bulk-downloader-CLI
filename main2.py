@@ -1,10 +1,12 @@
+# BARIS PALING ATAS!
+import console_guard  # noqa: F401  (side-effect: patch print & set UTF-8 env)
+
 import os
 from yt_short_downloader.config import DEFAULT_OUTPUT_DIR, DEFAULT_FILE_FORMAT
 from yt_short_downloader.ytdlp_tools import check_yt_dlp_installation
 from yt_short_downloader.fetch import get_short_links
 from yt_short_downloader.orchestrator import download_videos_with_db
 from yt_short_downloader.db import TinyStore
-
 
 def _ask_quality() -> str:
     print(" Quality options: ")
@@ -22,7 +24,6 @@ def _ask_quality() -> str:
         '5': '135+140',
     }.get(choice, 'best')
 
-
 def main():
     try:
         print("YouTube Shorts Bulk Downloader")
@@ -39,7 +40,6 @@ def main():
             print("No URL provided. Exiting.")
             return
 
-        # Siapkan database
         store = TinyStore()
 
         print("Fetching video list for preview...")
@@ -48,11 +48,9 @@ def main():
             print("No videos found or failed to fetch links.")
             return
 
-        # Normalisasi key channel (gunakan URL dasar sebagai key)
         channel_key = channel_url.split('/about')[0]
         store.upsert_channel(channel_key=channel_key, name=channel_name, url=channel_key)
 
-        # Tampilkan preview
         print(f" Total videos found on channel '{channel_name}': {len(all_video_entries)}")
         preview_count = min(len(all_video_entries), 10)
         print(f"  Previewing first {preview_count} videos: ")
@@ -67,16 +65,13 @@ def main():
             print("Operation cancelled.")
             return
 
-        # Batasi jumlah video
         max_videos_input = input(
             f"Enter the number of videos to download (1-{len(all_video_entries)}), leave blank for all: "
         ).strip()
         try:
-            max_videos = int(
-                max_videos_input) if max_videos_input.isdigit() else None
+            max_videos = int(max_videos_input) if max_videos_input.isdigit() else None
             if max_videos is not None and (max_videos < 1 or max_videos > len(all_video_entries)):
-                print(
-                    f"Invalid number. Using all {len(all_video_entries)} videos.")
+                print(f"Invalid number. Using all {len(all_video_entries)} videos.")
                 max_videos = None
         except ValueError:
             print("Invalid input. Using all videos.")
@@ -87,12 +82,10 @@ def main():
             print("No videos found or failed to fetch links.")
             return
 
-        # Simpan metadata minimal ke DB dan filter yang belum diunduh
         kept_entries = []
         for e in video_entries:
             vid = e.get('id')
             title = e.get('title', 'Unknown Title')
-            # bisa None, tergantung extractor
             upload_date = e.get('upload_date')
             store.upsert_video(channel_key=channel_key, video_id=vid, title=title, upload_date=upload_date)
             if not store.is_downloaded(channel_key, vid):
@@ -109,10 +102,8 @@ def main():
         quality = _ask_quality()
         print(f"Selected quality: {quality}")
 
-        file_format = input(
-            "Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
-        file_format = file_format if file_format in [
-            'mp4', 'webm'] else DEFAULT_FILE_FORMAT
+        file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
+        file_format = file_format if file_format in ['mp4', 'webm'] else DEFAULT_FILE_FORMAT
 
         output_directory = os.path.join(os.getcwd(), DEFAULT_OUTPUT_DIR)
         os.makedirs(output_directory, exist_ok=True)
@@ -131,7 +122,6 @@ def main():
 
         print(f"Starting download in {output_directory}...")
         print("Note: Caption files will be created for all videos, even if download fails.")
-        # Jalankan orkestrasi yang akan menandai DB jika sukses
         download_videos_with_db(
             video_entries=kept_entries,
             output_path=output_directory,
@@ -143,18 +133,20 @@ def main():
         )
 
         print(" Download process completed!")
-        print(
-            f"Check the '{DEFAULT_OUTPUT_DIR}' folder for downloaded videos and caption files.")
+        print(f"Check the '{DEFAULT_OUTPUT_DIR}' folder for downloaded videos and caption files.")
         print("Any errors were logged to 'download_errors.log'")
 
     except KeyboardInterrupt:
         print(" Operation cancelled by user.")
     except Exception as e:
+        # Ini juga akan disanitasi ke ASCII saat dicetak
         print(f"An unexpected error occurred: {e}")
-        with open("download_errors.log", "a", encoding="utf-8") as log_file:
-            log_file.write(f"Unexpected error in main: {e}")
+        try:
+            with open("download_errors.log", "a", encoding="utf-8") as log_file:
+                log_file.write(f"Unexpected error in main: {e}\n")
+        except Exception:
+            pass
         print("Check 'download_errors.log' for details.")
-
 
 if __name__ == "__main__":
     main()

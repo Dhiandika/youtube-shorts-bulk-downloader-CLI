@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 from tqdm import tqdm
-from typing import List, Dict
+from typing import List, Dict, Optional, Callable  # ⬅️ tambahkan Callable
 
 from .config import MAX_RETRIES
 from .utils import (
@@ -66,7 +66,7 @@ def download_video(video_id: str, video_title: str, output_path: str, channel_na
     caption_file = os.path.join(output_path, caption_filename)
 
     try:
-        with open(caption_file, 'w', encoding='utf-8') as f:
+        with open(caption_file, 'w', encoding='utf-8', errors='replace') as f:
             f.write(caption_text)
         print(f"Caption created: {caption_file}")
     except Exception as e:
@@ -175,21 +175,50 @@ def download_video(video_id: str, video_title: str, output_path: str, channel_na
     return False
 
 
-def download_videos(video_entries: List[Dict], output_path: str, channel_name: str,
-                    quality: str, file_format: str) -> None:
+def download_videos(
+    video_entries: List[Dict],
+    output_path: str,
+    channel_name: str,
+    quality: str,
+    file_format: str,
+    preassigned_indices: Optional[List[int]] = None,
+    on_success: Optional[Callable[[Dict, int], None]] = None,   # ⬅️ NEW
+) -> None:
     os.makedirs(output_path, exist_ok=True)
-    start_index = get_existing_index(output_path) + 1
+
+    if preassigned_indices is not None:
+        if len(preassigned_indices) != len(video_entries):
+            raise ValueError("preassigned_indices length must match video_entries length")
+        indices = preassigned_indices
+    else:
+        start_index = get_existing_index(output_path) + 1
+        indices = [start_index + i for i in range(len(video_entries))]
 
     total_videos = len(video_entries)
-    progress_bar = tqdm(total=total_videos, desc="Downloading", unit="video")
+    progress_bar = tqdm(total=total_videos, desc="Downloading", unit="video", ascii=True)
 
     threads: list[threading.Thread] = []
-    for i, entry in enumerate(video_entries):
-        index = start_index + i
-        t = threading.Thread(target=download_video, args=(
-            entry['id'], entry.get('title', 'Unknown Title'), output_path,
-            channel_name, quality, file_format, index
-        ))
+
+    def _worker(entry: Dict, index: int):
+        ok = download_video(
+            entry['id'],
+            entry.get('title', 'Unknown Title'),
+            output_path,
+            channel_name,
+            quality,
+            file_format,
+            index,
+        )
+        if ok and on_success:
+            try:
+                on_success(entry, index)
+            except Exception as cb_err:
+                # jangan sampai callback bikin thread crash
+                with open("download_errors.log", "a", encoding="utf-8") as log:
+                    log.write(f"on_success callback error for {entry.get('id')}: {cb_err}\n")
+
+    for entry, index in zip(video_entries, indices):
+        t = threading.Thread(target=_worker, args=(entry, index))
         t.start()
         threads.append(t)
 
@@ -198,3 +227,4 @@ def download_videos(video_entries: List[Dict], output_path: str, channel_name: s
         progress_bar.update(1)
 
     progress_bar.close()
+
