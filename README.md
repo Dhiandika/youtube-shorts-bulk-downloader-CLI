@@ -1,116 +1,269 @@
-<div align='center'>
 
-<h1>Download all YouTube Shorts from a channel. Bulk download all shorts from a specified YouTube channel using Python 3.10.0 and above  </h1>
-<h4>
+# Download all YouTube Shorts from a channel
 
+Bulk download Shorts from a YouTube channel using Python ≥ 3.10.
+
+<div align="center">
+
+**Supports:** Windows / macOS / Linux • `yt-dlp`  • TinyDB
+Global de-duplication by `video_id` • Persistent numbering • Date window (7/30/custom days)
 
 </div>
 
-# :notebook_with_decorative_cover: Table of Contents
-
-- [About the Project](#star2-about-the-project)
-  - [Core Functionality: YouTube Shorts Bulk Downloader](#electric_plug-core-functionality-youtube-shorts-bulk-downloader)
-  - [Additional Utility Scripts](#wrench-additional-utility-scripts)
-    - [Automated Caption Generation (`caption.py`)](#performing_arts-automated-caption-generation-captionpy)
-    - [File Sorting and Renaming (`sort.py`)](#floppy_disk-file-sorting-and-renaming-sortpy)
-- [Screenshots](#camera-screenshots)
-- [Getting Started](#toolbox-getting-started)
-- [Contributing](#wave-contributing)
-
-
-## :star2: About the Project
 ---
-This project provides a command-line interface (CLI) to bulk download all YouTube Shorts from a specified YouTube channel. It's built using Python 3.10.0 and above.
 
-### :electric_plug: Core Functionality: YouTube Shorts Bulk Downloader (`main.py`)
-The main script (`main.py`) of this project is designed to:
-- Fetch a list of Shorts videos from a given YouTube channel.
-- Support limiting the number of videos to be fetched.
-- Download Shorts videos with selectable quality options.
-- Save files with names based on the video title and sequential numbering.
-- Save video captions (descriptions) into text files.
-- Utilize multithreading to speed up the download process.
-- Implement automatic retries in case of failures.
-- Display download progress using `tqdm`.
-- Detect and remove duplicate files to prevent redundant storage.
-- Show a summary of the download results.
+## 📚 Table of Contents
 
----
-### :wrench: Additional Utility Scripts
-
-This project also includes a couple of utility scripts to help manage and enhance the downloaded content:
-
-#### :performing_arts: Automated Caption Generation (`caption.py`)
-
-The `caption.py` script is designed to automatically generate engaging captions for social media content, particularly focusing on Hololive talents. Its key capabilities include:
-
-- **Flexible Input**: Reads all `.txt` files stored in the `downloads_cut` folder. Each text file serves as the basis for generating a caption.
-- **Gemini AI Integration**: Uses Google's generative AI model (Gemini Pro) to create caption narratives. Users will be prompted to enter their Gemini API key directly in the terminal when the script is run.
-- **Gemini API Key**: The API key required to run this script can be obtained for free from [Google AI Studio](https://aistudio.google.com/app/apikey).
-- **Structured Prompting**: Sends a detailed system prompt and a one-shot example to the AI model to ensure the generated captions adhere to the desired format, including:
-    - A brief description of the talent.
-    - Interesting facts or unique details about the talent.
-    - Mention of the clip's source (if relevant from the input prompt).
-    - A collection of 15-25 relevant hashtags.
-- **Direct Output**: Once a caption is successfully generated, the script will **overwrite** the original `.txt` file's content with the new caption. This means the initial prompt content in that file will be replaced by the AI-processed caption.
-- **Usage**: Simply run `python caption.py` from the terminal, enter your Gemini API key when prompted, and the script will process all text files in the `downloads_cut` folder.
-
-**Important**: Since this script overwrites the original files, it's advisable to back up the files in `downloads_cut` if you wish to preserve the initial prompt content.
+- [Download all YouTube Shorts from a channel](#download-all-youtube-shorts-from-a-channel)
+  - [📚 Table of Contents](#-table-of-contents)
+  - [About the Project](#about-the-project)
+  - [Project Layout](#project-layout)
+  - [Quick Start](#quick-start)
+  - [Which “main” should I use?](#which-main-should-i-use)
+    - [Main 1 — Classic single-file flow](#main-1--classic-single-file-flow)
+    - [Main 2 — Modular + DB + Global de-dup](#main-2--modular--db--global-de-dup)
+    - [Main 3 — Date-window workflow (daily/weekly)](#main-3--date-window-workflow-dailyweekly)
+  - [Core Features](#core-features)
+  - [Requirements](#requirements)
+  - [Configuration](#configuration)
+  - [Output \& Numbering](#output--numbering)
+  - [De-duplication Rules](#de-duplication-rules)
+  - [Utility Scripts](#utility-scripts)
+    - [`caption.py` (optional)](#captionpy-optional)
+    - [`sort.py` (optional)](#sortpy-optional)
+  - [Contributing](#contributing)
+  - [License](#license)
+    - [Notes for Maintainers](#notes-for-maintainers)
 
 ---
 
-#### :floppy_disk: File Sorting and Renaming (`sort.py`)
+## About the Project
 
-The `sort.py` script is a utility for managing and tidying up your video collection, especially those downloaded in bulk. Here are its main functions:
+This repository contains a command-line toolset to download **YouTube Shorts** from a channel, safely, quickly, and repeatably:
 
-- **Flexible Sorting**: Videos (formats `.mp4` and `.webm`) in the specified directory will be sorted by their modification time. By default, sorting is from oldest to newest. The `--desc` option can be used to sort from newest to oldest.
-- **Automatic Renaming**: After sorting, video files will be renamed following the format `XX - CleanedFileName.extension` (e.g., `01 - My Cool Video.mp4`).
-- **Filename Cleaning**: Before new numbering is applied, the script cleans the original filenames by removing any leading numbers and hyphens (e.g., `123 - Original Video.mp4` becomes `Original Video.mp4`).
-- **Handling of Associated Text Files**: If `.txt` files exist with the same base name as the video files (e.g., caption or metadata files), these text files will also be renamed to match the new video filenames (e.g., `01 - My Cool Video.txt`).
-- **Interactive Directory Input**: If the directory path is not included as an argument when running the script, the user will be prompted to enter the directory path interactively via the terminal.
+* Interactive CLI with quality selection
+* Safe filenames (ASCII-only) to avoid Windows console issues
+* **TinyDB** for persistent metadata & download history
+* **Global de-dup** across channels (by `video_id`)
+* **Stable numbering** across runs (doesn’t reset at 1)
+* Optional **date filters** (7 / 30 / custom days)
 
-**How to Use `sort.py`**:
-
-1.  **Running with a Directory Path**:
-    ```bash
-    python sort.py "path/to/your/video_folder"
-    ```
-    Replace `"path/to/your/video_folder"` with the actual path to the directory containing your videos.
-
-2.  **Running with Reverse Sorting (Newest to Oldest)**:
-    ```bash
-    python sort.py "path/to/your/video_folder" --desc
-    ```
-
-3.  **Running Interactively (Will Prompt for Directory Input)**:
-    ```bash
-    python sort.py
-    ```
-    The script will ask you to enter the directory path.
-
-**Description**:
-This script is very useful for organizing video files by renaming them based on their modification time order. This simplifies the management of video collections, especially for content downloaded in large quantities. Its ability to also rename associated text files ensures that metadata or captions remain synchronized with their corresponding video files.
 ---
 
-## :camera: Screenshots
-<div align="center"> <a href=""><img src="/images/1.png" alt='image' width='800'/></a> </div>
-<div align="center"> <a href=""><img src="/images/image.png" alt='image' width='800'/></a> </div>
+## Project Layout
 
-## :toolbox: Getting Started
+```
+.
+├─ main.py                      # Main 1: classic single-file flow
+├─ main2.py                     # Main 2: modular + DB + global de-dup
+├─ main3.py    # Main 3: date-window workflow (+debug/enrichment)
+├─ yt_short_downloader/
+│  ├─ __init__.py
+│  ├─ config.py                 # Defaults (output dir, retries, etc.)
+│  ├─ fetch.py                  # get_short_links() via yt-dlp (extract_flat)
+│  ├─ downloader.py             # download_video(s), safe filenames, retries
+│  ├─ orchestrator.py           # index reservation, callbacks, DB marking
+│  ├─ utils.py                  # filename sanitizers, numbering helpers
+│  ├─ ytdlp_tools.py            # check_yt_dlp_installation, format helpers
+│  ├─ db.py                     # TinyDB store (channels/videos), dedupe helpers
+├─ console_guard.py             # Windows-safe printing & UTF-8 env patch
+├─ caption.py                   # (optional) caption generation utility
+├─ sort.py                      # (optional) organizer/renamer utility
+├─ requirements.txt
+└─ README.md
+```
 
-### :gear: Installation
+---
 
-- Install dependencies:
+## Quick Start
+
+1. **Install Python** 3.10+
+2. **Install system tools**
+
+   * Install `yt-dlp` (Python package)
+3. **Install Python deps**
+
 ```bash
 pip install -r requirements.txt
 ```
-- Run the main downloader script:
+
+4. **Run one of the mains** (see next section to choose):
+
+```bash
+python main.py                # Classic flow
+python main2.py               # Modular + DB + global de-dup
+python main3.py               # Date-window workflow
+```
+
+> 💡 Windows users: we ship `console_guard.py` which sets `PYTHONIOENCODING=UTF-8` and patches `print` to avoid `charmap` errors in the console.
+
+---
+
+## Which “main” should I use?
+
+### Main 1 — Classic single-file flow
+
+**File:** `main.py`
+**Use when:** You just want the original step-by-step flow, no date filtering.
+**Flow:**
+
+1. Ask for channel URL
+2. Fetch & preview list (first 10 titles)
+3. Confirm to proceed
+4. Ask how many videos to download (or all)
+5. Choose quality (best/worst/137+140/136+140/135+140)
+6. Choose file format (MP4/WEBM)
+7. Show final list to download
+8. Download with progress bar
+
+**What’s included:**
+
+* Safe ASCII printing (via `console_guard`)
+* Saves caption `.txt` next to each video
+* Retries + best-format fallback
+* **DB de-dup per video\_id globally** (won’t re-download across channels)
+* Persistent numbering in the output folder
+
+Run:
+
 ```bash
 python main.py
 ```
 
-For details on the utility scripts (`caption.py`, `sort.py`), please refer to their respective sections in "Additional Utility Scripts".
+---
+
+### Main 2 — Modular + DB + Global de-dup
+
+**File:** `main2.py`
+**Use when:** You want the **modular code** path with TinyDB, orchestrator (stable numbering), and **global de-dup** across channels.
+**Flow:** Similar to Main 1, but uses the refactored modules and DB flow everywhere.
+
+**Extra goodies:**
+
+* `TinyStore.is_downloaded_any(video_id)` → skip across channels
+* `orchestrator.reserve_indices()` → numbering continues across runs
+* Cleaner logs / error handling
+
+Run:
+
+```bash
+python main2.py
+```
 
 ---
-## :wave: Contributing
 
+### Main 3 — Date-window workflow (daily/weekly)
+
+**File:** `main_date_filter_debug.py`
+**Use when:** You want to download **only videos in the last 7 days / 30 days / custom X days**.
+**Flow:**
+
+1. Ask for channel URL
+2. Choose time window: 7 / 30 / custom / all
+3. Fetch & **debug-dump** entries (raw/normalized/parsed dates)
+4. Filter by date window
+5. (Optional) **Enrich** missing `upload_date` via per-video `yt-dlp --dump-single-json` (max 25)
+6. DB upsert, **global de-dup**, preview, download
+
+Run:
+
+```bash
+python main_date_filter_debug.py
+```
+
+---
+
+## Core Features
+
+* ✅ Bulk-download Shorts from a channel
+* ✅ Quality selection & format (mp4/webm)
+* ✅ Safe filenames (ASCII-only) to avoid Windows console encoding issues
+* ✅ Multithreaded downloads with retries + backoff
+* ✅ Caption `.txt` generation per video
+* ✅ Progress bar via `tqdm`
+* ✅ **TinyDB** metadata: channels/videos, timestamps
+* ✅ **Global de-dup** by `video_id` (skip across channels and future runs)
+* ✅ **Persistent numbering** (does not reset after switching channels)
+* ✅ **Date filters** (Main 3): 7 / 30 / custom X days, with optional quick enrichment
+
+---
+
+## Requirements
+
+* **Python** 3.10+
+* **yt-dlp** (Python package)
+* Python libs (via `requirements.txt`), e.g.: `tqdm`, `tinydb`, etc.
+
+> Check `yt-dlp` availability is built-in (`check_yt_dlp_installation()`).
+
+---
+
+## Configuration
+
+See `yt_short_downloader/config.py`. Common defaults:
+
+* `DEFAULT_OUTPUT_DIR` → e.g. `"new_week"`
+* `DEFAULT_FILE_FORMAT` → `"mp4"`
+* `MAX_RETRIES` → `3`
+
+You can change these or pass custom values inside your own wrapper scripts.
+
+---
+
+## Output & Numbering
+
+* Files are named like:
+  `NN - Clean_Title - Channel_Name.mp4`
+  with `NN` continuing from the **highest existing index** in the output directory.
+* Numbering is **reserved in DB** before starting (via orchestrator) to guarantee consistency even with multithreading.
+
+---
+
+## De-duplication Rules
+
+* **Primary key**: YouTube `video_id` (unique globally).
+* **Global check**: `TinyStore.is_downloaded_any(video_id)` ensures a video won’t be downloaded again even if you switch channels later.
+* On successful download, `orchestrator` marks `downloaded=True` in DB; future runs will skip that `video_id`.
+
+> If you ever want per-channel duplicates (not recommended), you could switch back to `store.is_downloaded(channel_key, vid)` — but the repo defaults to **global** de-dup to avoid clutter.
+
+---
+
+## Utility Scripts
+
+### `caption.py` (optional)
+
+* Reads `.txt` prompt files and generates social captions via **Google Gemini** (user supplies API key)
+* Overwrites the original `.txt` with generated caption + hashtags
+
+> See script header for usage details.
+
+### `sort.py` (optional)
+
+* Sort videos by mtime and rename to `NN - CleanName.ext`
+* Renames matching `.txt` sidecars to keep captions aligned
+* `--desc` for newest → oldest
+
+---
+
+## Contributing
+
+PRs welcome! If you’re adding features:
+
+* Keep the modular code in `yt_short_downloader/` clean & typed
+* Prefer adding new flows as separate mains (so users can choose)
+* Include a short note in this README
+
+---
+
+## License
+
+MIT (or your preferred license). Add a `LICENSE` file if you haven’t yet.
+
+---
+
+### Notes for Maintainers
+
+* The **DB schema** is intentionally simple (TinyDB tables: `channels`, `videos`).
+* Global de-dup relies on `videos` documents where `downloaded=True`.
+* If you change the DB path or table names, please reflect it in this README.
