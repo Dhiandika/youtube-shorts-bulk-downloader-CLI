@@ -1,9 +1,8 @@
 <!-- Banner -->
-<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FDhiandika%2Fyoutube-shorts-bulk-downloader-CLI&label=&icon=github&color=%23198754&message=&style=flat&tz=UTC">
 
 <p align="center">
-  <a href="./tiktok/images/image.png" target="_blank">
-    <img src="./tiktok/images/image.png" alt="YouTube Shorts & TikTok Downloader Suite" width="900">
+  <a href="images/baner.png" target="_blank">
+    <img src="images/baner.png" alt="YouTube Shorts & TikTok Downloader Suite" width="900">
   </a>
 </p>
 
@@ -32,8 +31,6 @@
     <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Dhiandika/youtube-shorts-bulk-downloader-CLI/workflow_name.yml?branch=main&style=for-the-badge&logo=github">
   </a>
 </p>
-<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FDhiandika%2Fyoutube-shorts-bulk-downloader-CLI&label=YouTube+Shorts+%26+TikTok+Downloader+Suite&icon=github&color=%233d8bfd&message=&style=for-the-badge&tz=Asia%2FJakarta">
-
 
 
 
@@ -43,6 +40,10 @@
 <p align="center">
   <img alt="YouTube" src="https://img.shields.io/badge/Module-YouTube_Shorts-FF0000?style=for-the-badge&logo=youtube&logoColor=white">
   <img alt="TikTok" src="https://img.shields.io/badge/Module-TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white">
+</p>
+<p align="center">
+<img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FDhiandika%2Fyoutube-shorts-bulk-downloader-CLI&label=YouTube+Shorts+%26+TikTok+Downloader+Suite&icon=github&color=%233d8bfd&message=&style=for-the-badge&tz=Asia%2FJakarta">
+
 </p>
 
 ---
