@@ -60,316 +60,176 @@ Global de-duplication • Stable numbering • Hashtag rules • Duration prunin
 </div>
 
 ---
-
 ## 📚 Table of Contents
 
-- [📚 Table of Contents](#-table-of-contents)
-- [About the Project](#about-the-project)
-- [Project Layout](#project-layout)
-- [Quick Start](#quick-start)
-  - [YouTube Shorts — choose a “main”](#youtube-shorts--choose-a-main)
-  - [TikTok — run-once flows (config-first)](#tiktok--run-once-flows-config-first)
-- [Core Features](#core-features)
-- [Requirements](#requirements)
-- [Configuration](#configuration)
-  - [YouTube (`tiktok/yt_short_downloader/config.py`)](#youtube-tiktokyt_short_downloaderconfigpy)
-  - [TikTok (`tiktok/tiktok_dl/config.py` and script-level constants)](#tiktok-tiktoktiktok_dlconfigpy-and-script-level-constants)
-- [Output \& Numbering](#output--numbering)
-- [De-duplication Rules](#de-duplication-rules)
-- [TikTok Tools (DB-based Management)](#tiktok-tools-db-based-management)
-- [Pruning by Duration (Folder-level)](#pruning-by-duration-folder-level)
-- [Utility Scripts](#utility-scripts)
-- [Troubleshooting](#troubleshooting)
-- [Legal \& Ethics](#legal--ethics)
-- [Contributing](#contributing)
-- [License](#license)
-- [Notes for Maintainers](#notes-for-maintainers)
+* [YouTube Shorts & TikTok Downloader Suite](#youTube-shorts--tiktok-downloader-suite)
+
+  * [📚 Table of Contents](#-table-of-contents)
+  * [Repo Layout](#repo-layout)
+  * [Quick Start](#quick-start)
+  * [Highlights](#highlights)
+  * [Requirements](#requirements)
+  * [Installation](#installation)
+  * [Usage](#usage)
+
+    * [YouTube Shorts (project in `tiktok/`)](#youtube-shorts-project-in-tiktok)
+    * [TikTok Suite (project in `tiktok/`)](#tiktok-suite-project-in-tiktok)
+  * [Configuration Notes](#configuration-notes)
+  * [Legal](#legal)
+  * [License](#license)
 
 ---
 
-## About the Project
-
-This repository combines two downloader toolsets:
-
-1. **YouTube Shorts Downloader (CLI-oriented)**
-   Modular code with TinyDB for metadata, **global de-dup** by `video_id`, stable numbering, and optional date-window workflows.
-
-2. **TikTok Downloader Suite (config-first or CLI)**
-   Full caption extraction, **hashtag prefilter** (all/any), **SQLite**-backed global de-dup, multithread download, and post-download management (sort/filter/prune).
-
----
-
-## Project Layout
+## Repo Layout
 
 ```
 📦youtube-shorts-bulk-downloader-CLI
  ┣ 📂images/
  ┃ ┗ 📜image.png
  ┣ 📂tiktok/
- ┃ ┣ 📂tiktok_dl/
- ┃ ┃ ┣ __pycache__/...
- ┃ ┃ ┣ bulk.py              # read sources, prefilter hashtags
- ┃ ┃ ┣ cli.py               # optional CLI helpers
- ┃ ┃ ┣ config.py            # THREADS, MAX_RETRIES, defaults
- ┃ ┃ ┣ db.py                # SQLite schema + helpers
- ┃ ┃ ┣ downloader.py        # multithread downloads + caption .txt
- ┃ ┃ ┣ filters.py           # sort/filter by duration & hashtags (DB)
- ┃ ┃ ┣ meta.py              # listing & full metadata (description)
- ┃ ┃ ┣ utils.py             # sanitizers, yt-dlp check, helpers
- ┃ ┃ ┗ __init__.py
- ┃ ┣ 📂yt_short_downloader/  # YouTube (modular)
- ┃ ┃ ┣ __pycache__/...
- ┃ ┃ ┣ config.py
- ┃ ┃ ┣ db.py                # TinyDB store
- ┃ ┃ ┣ downloader.py
- ┃ ┃ ┣ fetch.py
- ┃ ┃ ┣ orchestrator.py
- ┃ ┃ ┣ utils.py
- ┃ ┃ ┣ ytdlp_tools.py
- ┃ ┃ ┗ __init__.py
- ┃ ┣ __pycache__/...
- ┃ ┣ .env                    # (optional) for caption tools etc.
- ┃ ┣ caption.py              # optional caption generator (YouTube flow)
- ┃ ┣ console_guard.py        # safe UTF-8 console for Windows
- ┃ ┣ download_errors.log     # appended runtime errors
- ┃ ┣ main.py                 # YouTube main 1: classic flow
- ┃ ┣ main2.py                # YouTube main 2: modular + global de-dup
- ┃ ┣ main3.py                # YouTube main 3: date-window workflow
- ┃ ┣ prompt.txt              # prompt for caption.py
- ┃ ┣ README.md               # (TikTok/YouTube local doc — optional)
- ┃ ┣ requirements.txt
- ┃ ┣ sort.py                 # optional organizer/renamer (YouTube)
- ┃ ┗ video_metadata.json     # optional dump
- ┣ .gitattributes
- ┣ .gitignore
- ┣ README.md                 # ← you are here (combined root README)
- ┗ yt_simplify.py
+ ┃ ┣ 📂tiktok_dl/                # TikTok core package (db, downloader, filters, etc.)
+ ┃ ┣ 📂yt_short_downloader/      # YouTube Shorts core package (modular flow)
+ ┃ ┣ 📜.env
+ ┃ ┣ 📜caption.py
+ ┃ ┣ 📜console_guard.py
+ ┃ ┣ 📜download_errors.log
+ ┃ ┣ 📜main.py                   # YouTube main 1 (classic)
+ ┃ ┣ 📜main2.py                  # YouTube main 2 (modular + global de-dup)
+ ┃ ┣ 📜main3.py                  # YouTube main 3 (date-window workflow)
+ ┃ ┣ 📜prompt.txt
+ ┃ ┣ 📜README.md                 # README for the YouTube & TikTok projects inside /tiktok
+ ┃ ┣ 📜requirements.txt
+ ┃ ┣ 📜sort.py
+ ┃ ┗ 📜video_metadata.json
+ ┣ 📜.gitattributes
+ ┣ 📜.gitignore
+ ┣ 📜README.md                   # (this file)
+ ┗ 📜yt_simplify.py
 ```
 
-> **Databases:**
-> *YouTube:* TinyDB (JSON) in `tiktok/yt_short_downloader/db.py`.
-> *TikTok:* SQLite `tiktok/tiktok.db` (auto-created).
+> Note: The **YouTube** code and the **TikTok** suite both live inside the `tiktok/` folder for historical reasons.
 
 ---
 
 ## Quick Start
 
-### YouTube Shorts — choose a “main”
+**1) Install Python 3.10+** and system tools:
 
-1. Install Python **3.10+** and tools:
+* `yt-dlp` (Python package)
+* `ffmpeg/ffprobe` on PATH (recommended for duration handling)
 
-   ```bash
-   pip install -r tiktok/requirements.txt
-   ```
-2. Run one of the mains in `tiktok/`:
+**2) Install Python deps (from `tiktok/requirements.txt`):**
 
-* **Main 1 — Classic single-file flow** (`main.py`)
-  Interactive, step-by-step (no date filtering).
+```bash
+pip install -r tiktok/requirements.txt
+```
 
-  ```bash
-  python tiktok/main.py
-  ```
+**3) Pick a project:**
 
-* **Main 2 — Modular + DB + global de-dup** (`main2.py`)
-  Uses modular package + TinyDB orchestrator.
-
-  ```bash
-  python tiktok/main2.py
-  ```
-
-* **Main 3 — Date-window workflow** (`main3.py`)
-  Download last 7/30/custom days; can enrich missing dates.
-
-  ```bash
-  python tiktok/main3.py
-  ```
-
-> Windows tip: use `tiktok/console_guard.py` if you see console encoding issues.
+* **YouTube Shorts**: go to [tiktok/README.md](tiktok/README.md) for full usage of `main.py`, `main2.py`, `main3.py`.
+* **TikTok Suite**: use config-based runners (e.g., `TikTokDownloader.py`, `bulk_from_file.py`) and maintenance tools.
 
 ---
 
-### TikTok — run-once flows (config-first)
+## Highlights
 
-* **Run from a users list** (one per line; supports `@handle` or profile URL).
-  Edit config constants in your script (e.g., `TikTokDownloader.py` or `bulk_from_file.py`) then:
+### YouTube Shorts
 
-  ```bash
-  python tiktok/TikTokDownloader.py
-  # or the streaming/timeout variant:
-  python tiktok/bulk_from_file.py
-  ```
+* Download all **Shorts** from a channel
+* Interactive or modular mains (`main.py`, `main2.py`, `main3.py`)
+* **TinyDB** metadata, **global de-dup** by `video_id`
+* **Stable numbering** across runs
+* Optional **date windows** (7/30/custom days)
+* Utilities: caption generator, sorter, console guard for Windows
 
-* **Hashtag prefilter:** set `REQUIRED_TAGS` (e.g., `["#fyp", "#hololive"]`) and `TAG_MODE` (`"all"` or `"any"`).
-  Non-matching videos are **skipped** up front (optional: `skipped_hashtag` status in DB).
+### TikTok
 
-* **Output:** videos saved to `DEFAULT_OUTDIR` (see `tiktok/tiktok_dl/config.py`), with a paired caption `.txt` that contains the **full** `description`.
-
----
-
-## Core Features
-
-**Common**
-
-* `yt-dlp` integration with retries, backoff, and format selection.
-* Safe filenames (ASCII-only sanitizer).
-* Progress bars via `tqdm`.
-* Error logging to `download_errors.log`.
-
-**YouTube**
-
-* Modular design with TinyDB for channels/videos.
-* **Global de-dup** (won’t redownload across channels).
-* Stable numbering across runs.
-* Optional date windows (7/30/custom days), fast enrichment path.
-
-**TikTok**
-
-* Full caption extraction (no `...` truncation).
-* **Hashtag rules** (`all`/`any`) before download.
-* **SQLite** DB with statuses: `queued`, `downloading`, `success`, `failed`, `deleted`, `skipped_hashtag`.
-* Multithread downloads (configure `THREADS`).
+* Bulk download from **profiles list** (`users.txt`) or single profile
+* **Full caption** (no truncation) written as sidecar `.txt`
+* **Hashtag rules** (`all` / `any`) **before** download (skip early)
+* **SQLite** DB with statuses (`queued`, `downloading`, `success`, `failed`, `deleted`, `skipped_hashtag`)
+* **Multithread downloads**
+* Post-download **sorting/filtering** (duration/hashtags) and **pruning** tools
+* “Anti-stuck” listing (timeouts) + metadata socket timeouts/retries
 
 ---
 
 ## Requirements
 
 * **Python** 3.10+
-* **yt-dlp** (Python package)
+* **yt-dlp** (latest)
 * **tqdm**
-* **ffmpeg/ffprobe** on PATH (for duration & robust probing)
-* (Optional for TikTok/YouTube restricted content) **Chrome/Firefox/Edge** for cookies
+* **ffmpeg/ffprobe** on PATH (recommended)
+* (Optional) Chrome/Firefox/Edge for `cookies-from-browser` when login is required
+
+---
+
+## Installation
 
 ```bash
-pip install -r tiktok/requirements.txt
-# or
 pip install -U yt-dlp tqdm
+# or
+pip install -r tiktok/requirements.txt
 ```
 
-**ffmpeg/ffprobe**
+**ffmpeg/ffprobe**:
 
-* Windows: download from ffmpeg.org; add `bin/` to PATH.
+* Windows: download from ffmpeg.org and add `bin/` to PATH
 * macOS: `brew install ffmpeg`
 * Ubuntu/Debian: `sudo apt-get install ffmpeg`
 
 ---
 
-## Configuration
+## Usage
 
-### YouTube (`tiktok/yt_short_downloader/config.py`)
+### YouTube Shorts (project in `tiktok/`)
 
-* Output dir, default format, retries, etc.
-* Or pass values in `main2.py`/`main3.py` logic.
+See **[tiktok/README.md](tiktok/README.md)** for complete instructions.
 
-### TikTok (`tiktok/tiktok_dl/config.py` and script-level constants)
+* `python tiktok/main.py` – Classic single-file flow
+* `python tiktok/main2.py` – Modular + TinyDB + global de-dup
+* `python tiktok/main3.py` – Date-window workflow (7/30/custom days)
 
-* `THREADS`, `MAX_RETRIES`, `DEFAULT_DB` (`tiktok.db`), `DEFAULT_OUTDIR`.
-* In `TikTokDownloader.py` / `bulk_from_file.py` set:
-
-  * `INPUT_FILE` (default `tiktok/users.txt`)
-  * `COOKIES_FROM_BROWSER` (`None` / `"chrome"` / `"firefox"` / `"edge"`)
-  * `MAX_PER_USER` (limit per profile)
-  * `QUALITY`/`FORMAT` (e.g., `"best"`, `"mp4"`)
-  * `REQUIRED_TAGS` / `TAG_MODE`
-  * Listing & metadata timeouts (streaming variant)
-  * `DRY_RUN` for simulation
+Utilities: `console_guard.py`, `caption.py`, `sort.py`
 
 ---
 
-## Output & Numbering
+### TikTok Suite (project in `tiktok/`)
 
-**YouTube**
+**Prepare `users.txt` (one profile/URL per line):**
 
-* Filenames like `NN - Clean_Title - Channel_Name.mp4`.
-* **Persistent numbering** via orchestrator; continues across runs.
+```
+# comments allowed
+@some_user
+https://www.tiktok.com/@another_user
+```
 
-**TikTok**
+**Recommended runners (edit constants at the top, no CLI args):**
 
-* Filenames like `NN - Safe_Title - Uploader.mp4` (with paired `NN - ... .txt` caption).
-* Index `NN` continues from the highest existing in the output directory.
-* Caption `.txt` contains **full** description + URL + ID.
+* `TikTokDownloader.py` — one-shot, reads `users.txt`, prefilters by hashtag, anti-dup via SQLite, downloads multithreaded.
+* `bulk_from_file.py` — “anti-stuck”: listing via `yt-dlp -J --flat-playlist` (timeout), metadata socket timeouts/retries, prefilter hashtags, then download.
 
----
+**Maintenance / library management:**
 
-## De-duplication Rules
+* `manage_videos.py` (CLI) or your config-based variant
 
-**YouTube**
-
-* Global by `video_id` (TinyDB).
-* `is_downloaded_any(video_id)` guards against re-downloads across channels/runs.
-
-**TikTok**
-
-* Global by `video_id` (SQLite UNIQUE).
-* Already-known `video_id` → skipped before download.
+  * **Sort** by duration
+  * **Filter** by duration/hashtags; optionally delete files + sidecar captions; DB status → `deleted`
+* `prune_by_duration.py` (if you added it) — prune a folder by duration and delete paired `.txt` sidecars
 
 ---
 
-## TikTok Tools (DB-based Management)
+## Configuration Notes
 
-You can manage downloaded items using DB:
-
-* **Sort by duration**
-  Compute durations via `ffprobe` and list ascending/descending.
-  (With your non-CLI config variant or the provided CLI `manage_videos.py`.)
-
-* **Filter by duration & hashtags**
-  Enforce `min/max` seconds and hashtag rules.
-  Optionally **delete** failing items (video + paired caption `.txt`) and set `status='deleted'`.
+* **YouTube** defaults are in `tiktok/yt_short_downloader/config.py`.
+* **TikTok** defaults are in `tiktok/tiktok_dl/config.py` (e.g., `THREADS`, `MAX_RETRIES`, `DEFAULT_DB`, `DEFAULT_OUTDIR`).
+* When profiles need login/age-gate, enable cookies from your browser.
 
 ---
 
-## Pruning by Duration (Folder-level)
+## Legal
 
-Use the provided **folder-level** pruner (no DB required) to clean `tiktok_downloads/`:
-
-* Keep videos **≤ 120 s** (configurable).
-* Delete videos **> limit** **and** their paired caption `.txt` (same base filename).
-
-This is useful after bulk runs or when you want a quick, filesystem-only cleanup.
-
----
-
-## Utility Scripts
-
-* **YouTube**
-
-  * `caption.py` — generate social captions from `.txt` (requires your API key; see file header).
-  * `sort.py` — rename/organize by mtime → `NN - CleanName.ext` (keeps `.txt` paired).
-  * `console_guard.py` — guard against Windows console encoding issues.
-
-* **TikTok**
-
-  * `bulk_from_file.py` — *streaming* listing + metadata with timeouts (avoid “stuck”).
-  * `manage_videos.py` — CLI sort/filter via DB (if you prefer args over config).
-  * Your config-only runners (e.g., `TikTokDownloader.py`) — set constants once and run.
-
----
-
-## Troubleshooting
-
-* **Stuck listing (TikTok)** → Use `bulk_from_file.py` (CLI JSON listing + timeouts) or enable `COOKIES_FROM_BROWSER`.
-* **Caption shows `...`** → Ensure you’re running the flows that fetch **full metadata** (this repo’s TikTok suite does).
-* **403 / format not available** → Try `QUALITY = "best"` or a simpler format; enable cookies.
-* **Duration `??`** → Install `ffprobe` and ensure it’s on PATH.
-* **Windows encoding errors** → Run via `console_guard.py` or set `PYTHONIOENCODING=UTF-8`.
-
----
-
-## Legal & Ethics
-
-* Only download content you have rights or permission to save.
-* Respect TikTok/YouTube Terms of Service and copyright law.
-* Keep your cookies private; do not share credentials.
-
----
-
-## Contributing
-
-PRs welcome. Please:
-
-* Keep modular code clean and typed.
-* Add new flows as separate mains/scripts when possible.
-* Update this README when changing DB schemas, defaults, or behaviors.
+Download only content you have rights/permission to save. Respect platform ToS and copyright laws. Cookies are personal—do not share credentials.
 
 ---
 
@@ -379,9 +239,272 @@ MIT (or your preferred license). Add a `LICENSE` file if needed.
 
 ---
 
-## Notes for Maintainers
+# `tiktok/README.md` (YouTube-folder specific)
 
-* **YouTube DB:** TinyDB (tables for `channels`, `videos`), global de-dup relies on `video_id`.
-* **TikTok DB:** SQLite with `users`, `videos`, `user_videos`, and helpful indices.
-* Status transitions (TikTok): `queued → downloading → success | failed | deleted | skipped_hashtag`.
-* If changing defaults (e.g., output dirs, DB paths), mirror updates in this README and in script headers.
+# Download all YouTube Shorts from a channel
+
+Bulk download Shorts from a YouTube channel using Python ≥ 3.10.
+
+<div align="center">
+
+**Supports:** Windows / macOS / Linux • `yt-dlp` • TinyDB
+Global de-duplication by `video_id` • Persistent numbering • Date window (7/30/custom days)
+
+</div>
+
+---
+
+## 📚 Table of Contents
+
+- [`tiktok/README.md` (YouTube-folder specific)](#tiktokreadmemd-youtube-folder-specific)
+- [Download all YouTube Shorts from a channel](#download-all-youtube-shorts-from-a-channel)
+  - [📚 Table of Contents](#-table-of-contents-1)
+  - [About the Project](#about-the-project)
+  - [Project Layout](#project-layout)
+  - [Quick Start](#quick-start-1)
+  - [Which “main” should I use?](#which-main-should-i-use)
+    - [Main 1 — Classic single-file flow](#main-1--classic-single-file-flow)
+    - [Main 2 — Modular + DB + Global de-dup](#main-2--modular--db--global-de-dup)
+    - [Main 3 — Date-window workflow (daily/weekly)](#main-3--date-window-workflow-dailyweekly)
+  - [Core Features](#core-features)
+  - [Requirements](#requirements-1)
+  - [Configuration](#configuration)
+  - [Output \& Numbering](#output--numbering)
+  - [De-duplication Rules](#de-duplication-rules)
+  - [Utility Scripts](#utility-scripts)
+    - [`caption.py` (optional)](#captionpy-optional)
+    - [`sort.py` (optional)](#sortpy-optional)
+  - [Contributing](#contributing)
+  - [License](#license-1)
+    - [Notes for Maintainers](#notes-for-maintainers)
+
+---
+
+## About the Project
+
+This directory contains a command-line toolset to download **YouTube Shorts** from a channel, safely, quickly, and repeatably:
+
+* Interactive CLI with quality selection
+* Safe filenames (ASCII-only) to avoid Windows console issues
+* **TinyDB** for persistent metadata & download history
+* **Global de-dup** across channels (by `video_id`)
+* **Stable numbering** across runs (doesn’t reset at 1)
+* Optional **date filters** (7 / 30 / custom days)
+
+---
+
+## Project Layout
+
+```
+tiktok/
+├─ main.py                      # Main 1: classic single-file flow
+├─ main2.py                     # Main 2: modular + DB + global de-dup
+├─ main3.py                     # Main 3: date-window workflow (+debug/enrichment)
+├─ yt_short_downloader/
+│  ├─ __init__.py
+│  ├─ config.py                 # Defaults (output dir, retries, etc.)
+│  ├─ fetch.py                  # get_short_links() via yt-dlp (extract_flat)
+│  ├─ downloader.py             # download_video(s), safe filenames, retries
+│  ├─ orchestrator.py           # index reservation, callbacks, DB marking
+│  ├─ utils.py                  # filename sanitizers, numbering helpers
+│  ├─ ytdlp_tools.py            # check_yt_dlp_installation, format helpers
+│  ├─ db.py                     # TinyDB store (channels/videos), dedupe helpers
+├─ console_guard.py             # Windows-safe printing & UTF-8 env patch
+├─ caption.py                   # (optional) caption generation utility
+├─ sort.py                      # (optional) organizer/renamer utility
+├─ requirements.txt
+└─ README.md                    # (this file)
+```
+
+---
+
+## Quick Start
+
+1. **Install Python** 3.10+
+2. **Install system tools** — `yt-dlp` (Python package)
+3. **Install Python deps**
+
+```bash
+pip install -r requirements.txt
+```
+
+4. **Run one of the mains** (see next section):
+
+```bash
+python main.py                # Classic flow
+python main2.py               # Modular + DB + global de-dup
+python main3.py               # Date-window workflow
+```
+
+> 💡 Windows users: use `console_guard.py` to set `PYTHONIOENCODING=UTF-8` and patch `print` to avoid `charmap` issues.
+
+---
+
+## Which “main” should I use?
+
+### Main 1 — Classic single-file flow
+
+**File:** `main.py`
+**Use when:** You want the original step-by-step flow (no date filtering).
+
+**Flow:**
+
+1. Ask for channel URL
+2. Fetch & preview list (first 10 titles)
+3. Confirm to proceed
+4. Choose how many videos to download (or all)
+5. Choose quality (best/worst/137+140/136+140/135+140)
+6. Choose file format (MP4/WEBM)
+7. Show final list to download
+8. Download with progress bar
+
+**What’s included:**
+
+* Safe ASCII printing (via `console_guard`)
+* Caption `.txt` next to each video
+* Retries + best-format fallback
+* **DB de-dup per `video_id` globally** (skips across channels)
+* Persistent numbering in the output folder
+
+Run:
+
+```bash
+python main.py
+```
+
+---
+
+### Main 2 — Modular + DB + Global de-dup
+
+**File:** `main2.py`
+**Use when:** You want the **modular code** path with TinyDB, orchestrator (stable numbering), and **global de-dup** across channels.
+
+**Flow:** Similar to Main 1, but uses the refactored modules and DB flow everywhere.
+
+**Extra goodies:**
+
+* `TinyStore.is_downloaded_any(video_id)` → skip across channels
+* `orchestrator.reserve_indices()` → numbering continues across runs
+* Cleaner logs / error handling
+
+Run:
+
+```bash
+python main2.py
+```
+
+---
+
+### Main 3 — Date-window workflow (daily/weekly)
+
+**File:** `main3.py`
+**Use when:** You want to download **only videos in the last 7 days / 30 days / custom X days**.
+
+**Flow:**
+
+1. Ask for channel URL
+2. Choose time window: 7 / 30 / custom / all
+3. Fetch & **debug-dump** entries (raw/normalized/parsed dates)
+4. Filter by date window
+5. (Optional) **Enrich** missing `upload_date` via per-video `yt-dlp --dump-single-json` (max 25)
+6. DB upsert, **global de-dup**, preview, download
+
+Run:
+
+```bash
+python main3.py
+```
+
+---
+
+## Core Features
+
+* ✅ Bulk-download Shorts from a channel
+* ✅ Quality selection & format (mp4/webm)
+* ✅ Safe filenames (ASCII-only) to avoid Windows encoding issues
+* ✅ Multithread downloads with retries + backoff
+* ✅ Caption `.txt` generation per video
+* ✅ Progress bar via `tqdm`
+* ✅ **TinyDB** metadata: channels/videos, timestamps
+* ✅ **Global de-dup** by `video_id` (skip across channels and future runs)
+* ✅ **Date filters** (Main 3): 7 / 30 / custom X days, with optional quick enrichment
+
+---
+
+## Requirements
+
+* **Python** 3.10+
+* **yt-dlp** (Python package)
+* Python libs (see `requirements.txt`), e.g., `tqdm`, `tinydb`, etc.
+
+---
+
+## Configuration
+
+See `yt_short_downloader/config.py`. Common defaults:
+
+* `DEFAULT_OUTPUT_DIR` → e.g., `"new_week"`
+* `DEFAULT_FILE_FORMAT` → `"mp4"`
+* `MAX_RETRIES` → `3`
+
+You can change these or pass custom values inside your wrapper scripts.
+
+---
+
+## Output & Numbering
+
+* Files are named like:
+  `NN - Clean_Title - Channel_Name.mp4`
+  where `NN` continues from the **highest existing index** in the output directory.
+* Numbering is **reserved in DB** before starting (via `orchestrator`) to guarantee consistency even with multithreading.
+
+---
+
+## De-duplication Rules
+
+* **Primary key**: YouTube `video_id` (unique globally).
+* **Global check**: `TinyStore.is_downloaded_any(video_id)` ensures a video won’t be downloaded again even if you switch channels later.
+* On successful download, `orchestrator` marks `downloaded=True` in DB; future runs will skip that `video_id`.
+
+> If you ever want per-channel duplicates (not recommended), you could switch back to `store.is_downloaded(channel_key, vid)` — but the repo defaults to **global** de-dup to avoid clutter.
+
+---
+
+## Utility Scripts
+
+### `caption.py` (optional)
+
+* Reads `.txt` prompt files and generates social captions via a model (you provide the API key).
+* Overwrites the original `.txt` with the generated caption + hashtags.
+
+See the script header for usage details.
+
+### `sort.py` (optional)
+
+* Sort videos by mtime and rename to `NN - CleanName.ext`.
+* Renames matching `.txt` sidecars to keep captions aligned.
+* `--desc` for newest → oldest.
+
+---
+
+## Contributing
+
+PRs welcome! If you’re adding features:
+
+* Keep the modular code in `yt_short_downloader/` clean & typed.
+* Prefer adding new flows as separate mains (so users can choose).
+* Include a short note in this README.
+
+---
+
+## License
+
+MIT (or your preferred license). Add a `LICENSE` file if you haven’t yet.
+
+---
+
+### Notes for Maintainers
+
+* The **DB schema** is intentionally simple (TinyDB tables: `channels`, `videos`).
+* Global de-dup relies on `videos` documents where `downloaded=True`.
+* If you change the DB path or table names, please reflect it in this README.
