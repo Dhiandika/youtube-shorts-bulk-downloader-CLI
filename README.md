@@ -1,17 +1,17 @@
 <!-- Banner -->
 
-<p align="center">
-  <a href="images/baner.png" target="_blank">
-    <img src="images/baner.png" alt="YouTube Shorts & TikTok Downloader Suite" width="900">
-  </a>
-</p>
+
 
 <h1 align="center">YouTube Shorts & TikTok Downloader Suite</h1>
 
 <p align="center">
   Bulk-download untuk <b>YouTube Shorts</b> & <b>TikTok</b> dengan caption penuh, filter hashtag, de-dup global, dan alat manajemen pustaka.
 </p>
-
+<p align="center">
+  <a href="images/baner.png" target="_blank">
+    <img src="images/baner.png" alt="YouTube Shorts & TikTok Downloader Suite" width="900">
+  </a>
+</p>
 <!-- Core badges -->
 <p align="center">
   <!-- Project -->
@@ -45,7 +45,11 @@
 <img src="https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2FDhiandika%2Fyoutube-shorts-bulk-downloader-CLI&label=YouTube+Shorts+%26+TikTok+Downloader+Suite&icon=github&color=%233d8bfd&message=&style=for-the-badge&tz=Asia%2FJakarta">
 
 </p>
-
+<p align="center">
+  <a href="images/baner.png" target="_blank">
+    <img src="images/baner.png" alt="YouTube Shorts & TikTok Downloader Suite" width="900">
+  </a>
+</p>
 ---
 
 > ⚡️ **Fitur ringkas:** yt-dlp, caption penuh, filter hashtag (all/any), de-dup global (SQLite/TinyDB), numbering stabil, download multithread, pruning durasi, dan tools pengelolaan pustaka.
@@ -63,6 +67,7 @@ Global de-duplication • Stable numbering • Hashtag rules • Duration prunin
 
 ## 📚 Table of Contents
 
+- [](#)
 - [📚 Table of Contents](#-table-of-contents)
 - [About the Project](#about-the-project)
 - [Project Layout](#project-layout)
