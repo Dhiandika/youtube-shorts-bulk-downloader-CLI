@@ -11,3 +11,4 @@ yt_short_downloader/__pycache__/db.cpython-310.pyc
 yt_short_downloader/__pycache__/downloader.cpython-310.pyc
 yt_short_downloader/__pycache__/orchestrator.cpython-310.pyc
 *.pyc
+tiktok_downloads
