@@ -1,149 +1,113 @@
 # BARIS PALING ATAS!
-import console_guard  # noqa: F401  (side-effect: patch print & set UTF-8 env)
+import console_guard  # noqa: F401
 
 import os
 from yt_short_downloader.config import DEFAULT_OUTPUT_DIR, DEFAULT_FILE_FORMAT
 from yt_short_downloader.ytdlp_tools import check_yt_dlp_installation
 from yt_short_downloader.fetch import get_short_links
 from yt_short_downloader.orchestrator import download_videos_with_db
-from yt_short_downloader.db import TinyStore
 
-def _ask_quality() -> str:
-    print(" Quality options: ")
-    print("1. best - Best available quality (recommended)")
-    print("2. worst - Smallest file size")
-    print("3. 137+140 - 1080p video + audio (may not be available for all videos)")
-    print("4. 136+140 - 720p video + audio (may not be available for all videos)")
-    print("5. 135+140 - 480p video + audio (may not be available for all videos)")
-    choice = input("Enter quality choice (1-5, default: 1): ").strip()
-    return {
-        '1': 'best',
-        '2': 'worst',
-        '3': '137+140',
-        '4': '136+140',
-        '5': '135+140',
-    }.get(choice, 'best')
+# Store: pakai SQLite yang stabil. Fallback TinyDB jika modul tidak ada.
+try:
+    from yt_short_downloader.db_sqlite import SqliteStore as Store
+except Exception:
+    from yt_short_downloader.db import TinyStore as Store
+
+
+def _ask_file_format(default_ff: str) -> str:
+    print("\n File format options:")
+    print(" - auto (recommended)")
+    print(" - mkv")
+    print(" - mp4  (most compatible; may remux)")
+    print(" - webm")
+    raw = input(f"Enter file format (default: {default_ff}): ").strip().lower()
+    allowed = {'auto','mkv','mp4','webm'}
+    return raw if raw in allowed else (default_ff if default_ff in allowed else 'auto')
+
 
 def main():
     try:
-        print("YouTube Shorts Bulk Downloader")
-        print("=" * 40)
-
-        print("Checking yt-dlp installation...")
+        print("YouTube Shorts Bulk Downloader — HD-first strategy (stable workers)")
+        print("="*64)
         if not check_yt_dlp_installation():
-            print("Please install yt-dlp and try again.")
-            return
+            print("Please install yt-dlp and try again."); return
 
-        print(" " + "=" * 40)
-        channel_url = input("Enter the YouTube channel URL: ").strip()
-        if not channel_url:
-            print("No URL provided. Exiting.")
-            return
+        channel_url = input("Enter the YouTube channel URL (Shorts-enabled): ").strip()
+        if not channel_url: print("No URL. Exiting."); return
 
-        store = TinyStore()
+        store = Store()  # ← sekarang SQLiteStore (atau TinyStore jika fallback)
 
-        print("Fetching video list for preview...")
-        all_video_entries, channel_name = get_short_links(channel_url)
-        if not all_video_entries:
-            print("No videos found or failed to fetch links.")
-            return
+        print("Fetching Shorts list for preview...")
+        all_entries, channel_name = get_short_links(channel_url)
+        if not all_entries: print("No videos found."); return
 
         channel_key = channel_url.split('/about')[0]
         store.upsert_channel(channel_key=channel_key, name=channel_name, url=channel_key)
 
-        print(f" Total videos found on channel '{channel_name}': {len(all_video_entries)}")
-        preview_count = min(len(all_video_entries), 10)
-        print(f"  Previewing first {preview_count} videos: ")
-        for i, entry in enumerate(all_video_entries[:preview_count], start=1):
-            title = entry.get('title', 'Unknown Title')
-            if len(title) > 80:
-                title = title[:77] + "..."
-            print(f"{i}. {title}")
+        print(f" Total shorts on '{channel_name}': {len(all_entries)}")
+        for i, e in enumerate(all_entries[:12], 1):
+            t = e.get('title','Unknown Title')
+            print(f"{i}. {t[:80] + ('...' if len(t)>80 else '')}")
 
-        confirm_preview = input(" Do you want to continue ? (y/n): ").strip().lower()
-        if confirm_preview != 'y':
-            print("Operation cancelled.")
-            return
+        if input(" Continue? (y/n): ").strip().lower()!='y':
+            print("Operation cancelled."); return
 
-        max_videos_input = input(
-            f"Enter the number of videos to download (1-{len(all_video_entries)}), leave blank for all: "
-        ).strip()
-        try:
-            max_videos = int(max_videos_input) if max_videos_input.isdigit() else None
-            if max_videos is not None and (max_videos < 1 or max_videos > len(all_video_entries)):
-                print(f"Invalid number. Using all {len(all_video_entries)} videos.")
-                max_videos = None
-        except ValueError:
-            print("Invalid input. Using all videos.")
-            max_videos = None
+        max_in = input(f"Enter number to download (1-{len(all_entries)}), blank for all: ").strip()
+        max_videos = int(max_in) if max_in.isdigit() else None
+        if max_videos is not None and (max_videos<1 or max_videos>len(all_entries)):
+            print("Invalid number. Use all."); max_videos=None
 
-        video_entries, _ = get_short_links(channel_url, max_videos)
-        if not video_entries:
-            print("No videos found or failed to fetch links.")
-            return
+        entries, _ = get_short_links(channel_url, max_videos)
+        if not entries: print("No videos found."); return
 
-        kept_entries = []
-        for e in video_entries:
-            vid = e.get('id')
-            title = e.get('title', 'Unknown Title')
-            upload_date = e.get('upload_date')
-            store.upsert_video(channel_key=channel_key, video_id=vid, title=title, upload_date=upload_date)
-            if not store.is_downloaded(channel_key, vid):
-                kept_entries.append(e)
+        kept = []
+        for e in entries:
+            vid = e.get('id'); title = e.get('title','Unknown Title'); up = e.get('upload_date')
+            store.upsert_video(channel_key=channel_key, video_id=vid, title=title, upload_date=up)
+            if not store.is_downloaded(channel_key, vid): kept.append(e)
 
-        skipped = len(video_entries) - len(kept_entries)
-        if skipped:
-            print(f"Skipping {skipped} videos already downloaded.")
+        skipped = len(entries)-len(kept)
+        if skipped: print(f"Skipping {skipped} already-downloaded items.")
+        if not kept: print("All downloaded."); return
 
-        if not kept_entries:
-            print("All videos for this channel are already downloaded.")
-            return
-
-        quality = _ask_quality()
-        print(f"Selected quality: {quality}")
-
-        file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
-        file_format = file_format if file_format in ['mp4', 'webm'] else DEFAULT_FILE_FORMAT
+        quality = 'best'
+        print(f"Selected quality: {quality} (locked)")
+        file_format = _ask_file_format(DEFAULT_FILE_FORMAT)
+        print(f"Selected file format: {file_format}")
 
         output_directory = os.path.join(os.getcwd(), DEFAULT_OUTPUT_DIR)
         os.makedirs(output_directory, exist_ok=True)
 
-        print(f" Videos to Download({len(kept_entries)} total): ")
-        for i, entry in enumerate(kept_entries, start=1):
-            title = entry.get('title', 'Unknown Title')
-            if len(title) > 60:
-                title = title[:57] + "..."
-            print(f"{i}. {title}")
+        print(f"\n Shorts to Download ({len(kept)} total): ")
+        for i, e in enumerate(kept, 1):
+            t = e.get('title','Unknown Title'); print(f"{i}. {t[:60] + ('...' if len(t)>60 else '')}")
 
-        confirm = input("Proceed with download? (y/n): ").strip().lower()
-        if confirm != 'y':
-            print("Download canceled.")
-            return
+        if input("Proceed with download? (y/n): ").strip().lower()!='y':
+            print("Download canceled."); return
 
         print(f"Starting download in {output_directory}...")
-        print("Note: Caption files will be created for all videos, even if download fails.")
+        print("- Workers limited (max 3) with isolated temp dirs to avoid .part clashes.")
+        print("- We'll force ≥720p if available (multi-client).")
+        print("- If still low-res, we enhance/upscale to 1080×1920.")
+
+        # Orkestrator tetap (tidak diubah)
+        from yt_short_downloader.orchestrator import download_videos_with_db
         download_videos_with_db(
-            video_entries=kept_entries,
-            output_path=output_directory,
-            channel_name=channel_name,
-            quality=quality,
-            file_format=file_format,
-            channel_key=channel_key,
-            store=store,
+            video_entries=kept, output_path=output_directory,
+            channel_name=channel_name, quality=quality, file_format=file_format,
+            channel_key=channel_key, store=store,
         )
 
-        print(" Download process completed!")
-        print(f"Check the '{DEFAULT_OUTPUT_DIR}' folder for downloaded videos and caption files.")
-        print("Any errors were logged to 'download_errors.log'")
+        print("\nDone. Check the output folder.")
+        print("If HD existed, files should be ≥720×1280. If not, look for *.enhanced_1080x1920.mp4.")
 
     except KeyboardInterrupt:
-        print(" Operation cancelled by user.")
+        print("Operation cancelled.")
     except Exception as e:
-        # Ini juga akan disanitasi ke ASCII saat dicetak
-        print(f"An unexpected error occurred: {e}")
+        print("Unexpected error:", e)
         try:
-            with open("download_errors.log", "a", encoding="utf-8") as log_file:
-                log_file.write(f"Unexpected error in main: {e}\n")
+            with open("download_errors.log","a",encoding="utf-8") as f:
+                f.write(f"Unexpected error in main: {e}\n")
         except Exception:
             pass
         print("Check 'download_errors.log' for details.")
