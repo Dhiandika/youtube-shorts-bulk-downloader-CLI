@@ -23,7 +23,7 @@ def get_short_links(channel_url: str, max_videos: int | None = None):
         if 'entries' in result:
             video_entries = result['entries'][:max_videos] if max_videos else result['entries']
             channel_name = result.get('uploader', channel_url.split('/@')[-1])
-            video_entries = sorted(video_entries, key=lambda v: v.get('upload_date', '99999999'))
+            video_entries = sorted(video_entries, key=lambda v: v.get('upload_date', '00000000'), reverse=True)
             return video_entries, channel_name
         else:
             print("Tidak ada video ditemukan di channel ini.")

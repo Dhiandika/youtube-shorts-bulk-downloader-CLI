@@ -7,6 +7,8 @@ from yt_short_downloader.ytdlp_tools import check_yt_dlp_installation
 from yt_short_downloader.fetch import get_short_links
 from yt_short_downloader.orchestrator import download_videos_with_db
 
+from yt_short_downloader.utils import normalize_upload_date
+
 # Store: pakai SQLite yang stabil. Fallback TinyDB jika modul tidak ada.
 try:
     from yt_short_downloader.db_sqlite import SqliteStore as Store
@@ -62,7 +64,8 @@ def main():
 
         kept = []
         for e in entries:
-            vid = e.get('id'); title = e.get('title','Unknown Title'); up = e.get('upload_date')
+            vid = e.get('id'); title = e.get('title','Unknown Title');
+            up = normalize_upload_date(e.get('upload_date'))
             store.upsert_video(channel_key=channel_key, video_id=vid, title=title, upload_date=up)
             if not store.is_downloaded(channel_key, vid): kept.append(e)
 

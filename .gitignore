@@ -16,3 +16,5 @@ data
 debug
 youtube/apikeys.txt
 tiktok.db
+*.mp4
+*.txt

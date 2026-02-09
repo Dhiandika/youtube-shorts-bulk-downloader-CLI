@@ -8,7 +8,13 @@ from yt_short_downloader.config import DEFAULT_OUTPUT_DIR, DEFAULT_FILE_FORMAT
 from yt_short_downloader.ytdlp_tools import check_yt_dlp_installation
 from yt_short_downloader.fetch import get_short_links
 from yt_short_downloader.orchestrator import download_videos_with_db
-from yt_short_downloader.db import TinyStore
+from yt_short_downloader.utils import normalize_upload_date, parse_upload_date
+
+# Store: pakai SQLite yang stabil. Fallback TinyDB jika modul tidak ada.
+try:
+    from yt_short_downloader.db_sqlite import SqliteStore as Store
+except Exception:
+    from yt_short_downloader.db import TinyStore as Store
 
 
 # ---------- Utilities kecil untuk debug ----------
@@ -24,33 +30,7 @@ def _show_ascii(s: str) -> str:
     return s
 
 
-def normalize_upload_date(upload_date: Optional[str]) -> Optional[str]:
-    """
-    - 'YYYYMMDD' -> 'YYYY-MM-DD'
-    - 'YYYY-MM-DD' -> tetap
-    selain itu -> None
-    """
-    if not upload_date:
-        return None
-    s = str(upload_date).strip()
-    if len(s) == 8 and s.isdigit():
-        return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
-    # izinkan sudah yyyy-mm-dd
-    try:
-        datetime.strptime(s, "%Y-%m-%d")
-        return s
-    except Exception:
-        return None
 
-
-def parse_upload_date(upload_date: Optional[str]) -> Optional[datetime]:
-    iso = normalize_upload_date(upload_date)
-    if not iso:
-        return None
-    try:
-        return datetime.strptime(iso, "%Y-%m-%d")
-    except Exception:
-        return None
 
 
 def filter_entries_by_days(entries: List[Dict], days: Optional[int]) -> List[Dict]:
@@ -93,7 +73,7 @@ def debug_dump_entries(entries: List[Dict], days: Optional[int], limit: int = 12
 
 # ---------- Enrichment opsional ----------
 
-def enrich_missing_upload_dates(entries: List[Dict], max_tasks: int = 25) -> int:
+def enrich_missing_upload_dates(entries: List[Dict], max_tasks: int = 25, days: Optional[int] = None) -> int:
     """
     Ambil upload_date untuk sebagian kecil (maks 25) entri yang kosong,
     dengan memanggil yt-dlp --dump-single-json per video (shorts).
@@ -103,6 +83,10 @@ def enrich_missing_upload_dates(entries: List[Dict], max_tasks: int = 25) -> int
     targets = [e for e in entries if not normalize_upload_date(e.get("upload_date"))][:max_tasks]
     if not targets:
         return 0
+
+    cutoff = None
+    if days:
+        cutoff = datetime.utcnow() - timedelta(days=days)
 
     print(f"[DEBUG] Enrichment: mencoba melengkapi tanggal untuk {len(targets)} video (maks {max_tasks})...")
     for e in targets:
@@ -123,6 +107,14 @@ def enrich_missing_upload_dates(entries: List[Dict], max_tasks: int = 25) -> int
                     e["upload_date"] = norm
                     filled += 1
                     print(f"  [+] {vid} -> upload_date={norm}")
+
+                    # Optimization: Stop if we found a video older than cutoff
+                    # Assumption: videos are roughly sorted descending (Newest First)
+                    if cutoff:
+                        dt = parse_upload_date(norm)
+                        if dt and dt < cutoff:
+                            print(f"  [Info] Found video older than {days} days ({norm}). Stopping enrichment.")
+                            break
                 else:
                     print(f"  [-] {vid} -> upload_date tidak valid: {up!r}")
             else:
@@ -158,19 +150,15 @@ def ask_time_window_days() -> Optional[int]:
 
 def ask_quality() -> str:
     print("\nQuality options:")
-    print("1. best - Best available quality (recommended)")
-    print("2. worst - Smallest file size")
-    print("3. 137+140 - 1080p video + audio (may not be available for all videos)")
-    print("4. 136+140 - 720p video + audio (may not be available for all videos)")
-    print("5. 135+140 - 480p video + audio (may not be available for all videos)")
-    choice = input("Enter quality choice (1-5, default: 1): ").strip()
-    return {
-        "1": "best",
-        "2": "worst",
-        "3": "137+140",
-        "4": "136+140",
-        "5": "135+140",
-    }.get(choice, "best")
+    print("1. FORCE 1080P (Best Quality) - [DEFAULT]")
+    print("2. 1080p High Definition (Same as option 1)")
+    
+    # Kita hanya beri ilusi pilihan, padahal isinya sama-sama "best" 
+    # yang sudah di-tweak di downloader.py untuk STRICT 1080P.
+    
+    choice = input("Enter quality choice (Default: 1): ").strip()
+    print(">> SELECTED: FORCE 1080P (Strict Mode)")
+    return "best"
 
 
 # ---------- Main ----------
@@ -204,25 +192,23 @@ def main():
         # Filter awal
         candidate_entries = filter_entries_by_days(all_entries, days)
 
-        # Jika hasil kosong & ada banyak tanpa tanggal -> tawarkan enrichment
+        # Jika hasil kosong & ada banyak tanpa tanggal -> Auto run enrichment (max 50)
         if days is not None and not candidate_entries:
             missing_total = sum(1 for e in all_entries if not parse_upload_date(e.get("upload_date")))
             if missing_total:
-                ans = input(f"\nTidak ada video terdeteksi dalam {days} hari, "
-                            f"namun ada {missing_total} entri tanpa upload_date.\n"
-                            f"Jalankan enrichment cepat (maks 25)? (y/n): ").strip().lower()
-                if ans == "y":
-                    enrich_missing_upload_dates(all_entries, max_tasks=25)
-                    print("\n[DEBUG] Dump ulang setelah enrichment:")
-                    debug_dump_entries(all_entries, days, limit=12)
-                    candidate_entries = filter_entries_by_days(all_entries, days)
+                print(f"\n[INFO] {missing_total} entries missing date. Auto-enriching top 300 to find recent videos...")
+                enrich_missing_upload_dates(all_entries, max_tasks=300, days=days)
+                
+                print("\n[DEBUG] Dump ulang setelah enrichment:")
+                debug_dump_entries(all_entries, days, limit=12)
+                candidate_entries = filter_entries_by_days(all_entries, days)
 
         if days is not None and not candidate_entries:
             print(f"\nTidak ada video dalam {days} hari terakhir untuk channel ini.")
             return
 
         # DB & dedupe
-        store = TinyStore()
+        store = Store()
         channel_key = channel_url.split("/about")[0]
         store.upsert_channel(channel_key=channel_key, name=channel_name, url=channel_key)
 
@@ -261,11 +247,10 @@ def main():
             print("Canceled.")
             return
 
-        quality = ask_quality()
-        print(f"Selected quality: {quality}")
-
-        file_format = input("Enter file format (MP4/WEBM, default: MP4): ").strip().lower()
-        file_format = file_format if file_format in ["mp4", "webm"] else DEFAULT_FILE_FORMAT
+        # STRICT ENFORCEMENT: 1080p & H.264 MP4
+        print("\n[INFO] Enforcing Strict 1080p & H.264 MP4 (Anti-403 Mode)")
+        quality = "best"
+        file_format = "mp4"
 
         output_directory = os.path.join(os.getcwd(), DEFAULT_OUTPUT_DIR)
         os.makedirs(output_directory, exist_ok=True)

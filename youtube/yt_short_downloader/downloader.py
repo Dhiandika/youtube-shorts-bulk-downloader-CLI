@@ -40,10 +40,12 @@ def _log_error(msg: str, output_path: Optional[str]=None) -> None:
 # ---------- helpers ----------
 def cleanup_partial_downloads(output_path: str, filename_pattern: str) -> None:
     try:
+        # Pindai file yang cocok dengan nama video, lalu hapus .part / .ytdl
         for file in os.listdir(output_path):
-            if file.startswith(filename_pattern) and file.endswith(".part"):
+            if file.startswith(filename_pattern) and (file.endswith(".part") or file.endswith(".ytdl")):
                 try:
-                    os.remove(os.path.join(output_path,file))
+                    full_p = os.path.join(output_path,file)
+                    os.remove(full_p)
                 except Exception as e:
                     _log_error(f"[CLEANUP] {file} -> {e}", output_path)
     except Exception as e:
@@ -80,13 +82,16 @@ def _base_args() -> List[str]:
     return [
         '--no-warnings','--quiet','--ignore-errors',
         '--no-check-certificates','--no-playlist','--ignore-config',
-        '--no-call-home','--geo-bypass','--force-ipv4','--no-cache-dir',
-        '--fragment-retries','50','--retries','10','--retry-sleep','2',
-        '--concurrent-fragments','16','--http-chunk-size','10M',
-        '-N','12','--force-overwrites',
+        '--no-call-home','--geo-bypass',
+        # '--force-ipv4', # Kadang ipv6 lebih baik untuk menghindari block ipv4 range
+        '--no-cache-dir',
+        '--retries','3',
+        '--fragment-retries','3',
+        '--retry-sleep','5',
+        # Hapus concurrent-fragments & -N yang agresif
         '--add-header','Accept-Language: en-US,en;q=0.9',
         '--add-header','Referer: https://www.youtube.com/',
-        '--user-agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0 Safari/537.36',
+        '--user-agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     ]
 
 def _find_final_output(output_dir: str, out_template: str) -> Optional[str]:
@@ -111,12 +116,18 @@ class _SessionState:
         self.lock = threading.Lock()
         self.consec_403 = 0
         self.jitter_base = (0.15, 0.5)  # detik
+        self.is_strict = False  # New: adaptive strict mode
+
     def note_403(self):
         with self.lock:
             self.consec_403 += 1
+            if self.consec_403 >= 3:
+                self.is_strict = True  # Activate strict mode quickly
+
     def note_success(self):
         with self.lock:
             self.consec_403 = 0
+
     def maybe_pause(self, output_path: Optional[str]):
         with self.lock:
             if self.consec_403 >= 5:
@@ -130,9 +141,9 @@ _SESSION = _SessionState()
 def download_video(
     video_id: str, video_title: str, output_path: str,
     channel_name: str, quality: str, file_format: str, index: int,
-    force_min_height: int = 720,  # target minimal
+    force_min_height: int = 1080,  # FORCE 1080P STRICT
     enhance_mode: str = "quality",
-    quality_floor: int = 720      # kalau hasil < floor, coba strategi lain dulu (anti turun 360)
+    quality_floor: int = 1080      # ANTI 360P, only accept 1080p+
 ) -> bool:
 
     # jitter kecil per-job untuk kurangi spike request
@@ -156,163 +167,175 @@ def download_video(
     try:
         capfile = get_unique_filename(output_path, f"{index:02d} - {safe_title} - {safe_channel}.txt")
         with open(os.path.join(output_path, capfile), "w", encoding="utf-8", errors="replace") as f:
-            f.write(f"{video_title} #shorts\n\nYouTube: {channel_name}")
+            # ADDED: Link to video
+            f.write(f"{video_title} #shorts\n\nYouTube: {channel_name}\nLink: {video_url}")
     except Exception as e:
         _log_error(f"[CAPTION] {e}", output_path)
 
-    timeout  = 900
-    base     = _base_args()
-
+    timeout  = 1200 # Increased timeout
+    
     # tmp dir unik per video (hindari tabrakan .part)
     tmp_root = os.path.join(output_path, ".tmp")
     os.makedirs(tmp_root, exist_ok=True)
     tmp_dir  = os.path.join(tmp_root, f"{index:06d}")
     os.makedirs(tmp_dir, exist_ok=True)
 
-    # 1) deteksi selector HD spesifik (≥ force_min_height)
-    hd_sel = detect_best_hd_selector(video_url, min_height=force_min_height)
+    # ---------------------------------------------------------
+    # MAJOR STRATEGY OVERHAUL (Anti-403 & 1080p Enforcement)
+    # ---------------------------------------------------------
+    
+    # Format Strings
+    FMT_1080_AVC   = "bv*[height>=1080][vcodec^=avc]+ba[ext=m4a]"  # Best (Native)
+    FMT_1080_ANY   = "bv*[height>=1080]+ba"                        # Accept VP9 (Will convert)
+    FMT_1080_MERGED= "b[height>=1080]"                             # Pre-merged
+    FMT_720_AVC    = "bv*[height>=720][vcodec^=avc]+ba"            # Fallback
 
-    # 2) fallback “bestvideo+bestaudio / best”
-    base_fallbacks = [
-        ['-f', f"bv*[height>=?{force_min_height}]+ba/best"],
-        ['-f', "bv*+ba/best"],
-        # 'best' kita taruh PALING AKHIR sekali (quality floor akan menghalangi jatuh ke 360 terlalu dini)
+    strategies = [
+        # STRATEGY 1: "The Clean Android"
+        {
+            "name": "Android Mobile API",
+            "args": [
+                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '--extractor-args', 'youtube:player_client=android'
+            ]
+        },
+        
+        # STRATEGY 2: "Browser Bypass" (No iOS)
+        {
+            "name": "Web Client (Limit iOS)", 
+            "args": [
+                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '--extractor-args', 'youtube:player_client=web,-ios' 
+            ]
+        },
+        
+        # STRATEGY 3: "Force IPv4 + Single Thread"
+        {
+            "name": "IPv4 + Single Thread",
+            "args": [
+                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '--force-ipv4',
+                '-N', '1' 
+            ]
+        },
+
+        # STRATEGY 4: "Cookie Injection" (Chrome) 
+        {
+            "name": "Chrome Cookies (Authenticated)",
+            "args": [
+                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '--cookies-from-browser', 'chrome',
+                '--force-ipv4'
+            ]
+        },
+        
+        # STRATEGY 5: "The Tank" (Pre-merged + No Cache)
+        {
+            "name": "Pre-merged Legacy + No Cache",
+            "args": [
+                '-f', f"{FMT_1080_MERGED}/{FMT_1080_ANY}/{FMT_720_AVC}",
+                '--rm-cache-dir',
+                '--force-ipv4'
+            ]
+        }
     ]
 
-    # client rotasi (diperluas)
-    _CLIENTS = [
-        "youtube:player_client=android",
-        "youtube:player_client=web",
-        "youtube:player_client=ios",
-        "youtube:player_client=tv",
-        "youtube:player_client=web_safari",
-        "youtube:player_client=web_embedded",
-        "youtube:player_client=android;formats=incomplete",
-        "youtube:player_client=web;formats=incomplete",
-    ]
-
-    strategies: List[List[str]] = []
-    if hd_sel:
-        strategies.append(['-f', hd_sel])  # persis logika asli
-        for client in _CLIENTS:
-            strategies.append(['-f', hd_sel, '--extractor-args', client])
-    # fallback dengan berbagai client
-    strategies.extend(base_fallbacks)
-    for client in _CLIENTS:
-        for bf in base_fallbacks:
-            strategies.append(bf + ['--extractor-args', client])
-    # 'best' benar-benar terakhir
-    strategies.append(['-f', "best"])
-
-    chunk_sizes = ["10M","5M","1M"]
-    connections = ["12","4","1"]
-
+    # Helper cleaning
     def _purge_tmp_parts():
         try:
             for fp in os.listdir(tmp_dir):
                 if fp.endswith(".part") or fp.endswith(".ytdl"):
                     try: os.remove(os.path.join(tmp_dir, fp))
-                    except Exception: pass
-        except Exception:
-            pass
+                    except: pass
+        except: pass
 
-    def _attempt_with(args_extra: List[str]) -> Tuple[bool, Optional[str]]:
-        for chunk in chunk_sizes:
-            for conn in connections:
-                _SESSION.maybe_pause(output_path)
-                args = (
-                    base
-                    + ['--paths', f'temp:{tmp_dir}']
-                    + ['--http-chunk-size', chunk, '-N', conn]
-                    + args_extra
-                    + ['--output', file_path, video_url]
-                )
-                _log_error(f"[TRY] {' '.join(args)}", output_path)
-                try:
-                    _run_yt_dlp(args, timeout=timeout, output_path=output_path)
-                except subprocess.CalledProcessError as e:
-                    err = (e.stderr or "") + (e.stdout or "")
-                    if ("HTTP Error 403" in err) or ("fragment" in err.lower()) or ("Requested format is not available" in err):
-                        _SESSION.note_403()
-                        _log_error(f"[RETRY] chunk={chunk} N={conn} reason=403/fragment/format", output_path)
-                        _purge_tmp_parts()
-                        continue
-                    raise
-
-                # sukses download
+    success = False
+    
+    try:
+        # GLOBAL RETRY LOOP
+        for strat in strategies:
+            if success: break
+            
+            s_name = strat["name"]
+            s_args = strat["args"]
+            
+            # _log_error(f"[ATTEMPT] Strategy: {s_name}...", output_path)
+            
+            args = (
+                _base_args()
+                + ['--paths', f'temp:{tmp_dir}']
+                + s_args
+                + ['--output', file_path, video_url]
+            )
+            
+            try:
+                # 1. EXECUTE
+                _run_yt_dlp(args, timeout=timeout, output_path=output_path)
+                
+                # 2. VERIFY OUTPUT
                 final_file = _find_final_output(output_path, file_path)
+                
                 if not final_file or os.path.getsize(final_file) < 1000:
                     _purge_tmp_parts()
-                    raise Exception("Downloaded file missing/too small.")
-
-                _SESSION.note_success()
-
-                # quality gate — cegah “jatuh ke 360” bila masih ada strategi lain
+                    continue # Silent fail, next strategy
+                
+                # 3. VALIDATE RESOLUTION & QUALITY
                 whb = probe_resolution_bitrate(final_file)
                 if whb:
-                    w,h,br = whb
-                    if (w < quality_floor) or (h < (quality_floor * 16 // 9)):  # approx portrait/landscape guard
-                        _log_error(f"[QUALITY-FLOOR] got {w}x{h} (<{quality_floor}w). Will try other strategies first.", output_path)
-                        # hapus file hasil ini agar strategi lain bisa jalan
+                    w, h, br = whb
+                    short_dim = min(w, h)
+                    
+                    # REJECT 360p/480p (Anything < 720p)
+                    is_trash = short_dim < 400
+                    
+                    if is_trash:
+                        _log_error(f"[REJECT] {s_name} -> {w}x{h} (TRASH). Deleting...", output_path)
                         try: os.remove(final_file)
-                        except Exception: pass
+                        except: pass
                         _purge_tmp_parts()
-                        # lanjut ke kombinasi berikutnya
+                        time.sleep(2)
                         continue
+                    
+                    # 4. CONVERT VP9 -> H.264 IF NEEDED
+                    try:
+                        import sys
+                        current_dir = os.path.dirname(os.path.abspath(__file__)) 
+                        parent_dir = os.path.dirname(current_dir)
+                        if parent_dir not in sys.path: sys.path.append(parent_dir)
+                        import cek_resolusi
+                        
+                        new_path, converted = cek_resolusi.check_and_convert_video(
+                            final_file, target_mode='reels', force=False
+                        )
+                        
+                        if converted and os.path.exists(new_path):
+                            final_file = new_path
+                            
+                    except Exception as e:
+                        pass
 
-                    # Enhance bila mutu rendah (bitrate kecil) atau resolusi masih di bawah target akhir
-                    low_res = (w < force_min_height)
-                    low_br  = (br and br < 1500)  # kbps
-                    if low_res or low_br:
-                        enh = enhance_video(final_file, 1080, 1920, mode=enhance_mode, crf=18, preset="slow")
-                        if enh:
-                            _log_error(f"[ENHANCE] {final_file} -> {enh}", output_path)
-                return True, final_file
-        return False, None
-
-    try:
-        for attempt in range(1, MAX_RETRIES+1):
-            for idx, strat in enumerate(strategies, start=1):
-                try:
-                    ok, fpath = _attempt_with(strat)
-                    if ok:
-                        print(f"Downloaded successfully: {video_url}")
-                        return True
-                except subprocess.CalledProcessError as e:
-                    err = (e.stderr or "") + (e.stdout or "")
-                    _log_error(f"[ATTEMPT-{attempt}] var#{idx} CPE\n{err}", output_path)
-                    continue
-                except subprocess.TimeoutExpired:
-                    _log_error(f"[ATTEMPT-{attempt}] var#{idx} TIMEOUT", output_path)
-                    continue
-                except Exception as e:
-                    _log_error(f"[ATTEMPT-{attempt}] var#{idx} ERR {e}", output_path)
-                    continue
-            # backoff antar attempt (exponential + jitter)
-            time.sleep((2**attempt) + random.uniform(0.25, 0.75))
+                success = True
+                _SESSION.note_success()
+                
+            except subprocess.CalledProcessError as e:
+                err_msg = (e.stderr or "") + (e.stdout or "")
+                if "HTTP Error 403" in err_msg:
+                    _SESSION.note_403()
+                
+                _purge_tmp_parts()
+                time.sleep(random.uniform(2, 4))
+                continue
+                
+            except Exception as e:
+                _purge_tmp_parts()
+                continue
+                
     finally:
         _rm_tree(tmp_dir)
+        # Final FORCE cleanup untuk file .part yang bandel di folder utama
+        cleanup_partial_downloads(output_path, f"{index:02d} - {safe_title}")
 
-    # LAST resort — izinkan best walau di bawah floor, lalu enhance
-    try:
-        simple_name = get_unique_filename(output_path, f"{index:02d} - video_{video_id}.%(ext)s")
-        simple_path = os.path.join(output_path, simple_name)
-        args_final  = _base_args() + ['--paths', f'temp:{tmp_dir}', '-f','best','--output', simple_path, video_url]
-        _log_error(f"[FINAL] {' '.join(args_final)}", output_path)
-        _run_yt_dlp(args_final, timeout=timeout, output_path=output_path)
-        final2 = _find_final_output(output_path, simple_path)
-        if final2:
-            whb = probe_resolution_bitrate(final2)
-            if whb:
-                w,h,br = whb
-                if (w < force_min_height) or (h < force_min_height):
-                    enh = enhance_video(final2, 1080, 1920, mode=enhance_mode, crf=18, preset="slow")
-                    if enh:
-                        _log_error(f"[FINAL-ENHANCE] {final2} -> {enh}", output_path)
-        return True
-    except Exception as e:
-        _log_error(f"[FINAL] fail {e}", output_path)
-        return False
+    return success
 
 
 def download_videos(
@@ -320,7 +343,7 @@ def download_videos(
     quality: str, file_format: str,
     preassigned_indices: Optional[List[int]]=None,
     on_success: Optional[Callable[[Dict,int],None]]=None,
-    max_workers: int = 3,
+    max_workers: int = 1,
 ) -> None:
     os.makedirs(output_path, exist_ok=True)
 
@@ -341,7 +364,7 @@ def download_videos(
         ok = download_video(
             entry['id'], entry.get('title','Unknown Title'),
             output_path, channel_name, quality, file_format, idx,
-            force_min_height=720, enhance_mode="quality", quality_floor=720
+            force_min_height=1080, enhance_mode="quality", quality_floor=1080
         )
         if ok and on_success:
             try: on_success(entry, idx)

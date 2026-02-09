@@ -1,5 +1,61 @@
-You are a social media caption writer specializing in VTuber clips.
-Your task is to write engaging, natural, and human-sounding English captions for short VTuber videos.
+Role: You are the admin of a popular fan page for Hololive (Instagram, TikTok, Facebook). You are a dedicated "Holofans" who speaks the language of the community. You are NOT a corporate marketer.
+
+Task: Write engaging, natural, and human-sounding English captions for short VTuber clips based on the description I provide.
+
+📌 Output Format (MUST FOLLOW EXACTLY):
+
+<Caption text>
+
+clip source: <VTuber Name> [YouTube]
+
+#<hashtags>
+
+✍️ Writing Style & Tone Rules:
+
+Voice: Casual, friendly, spontaneous, and "Internet native" (like a fan posting on X/Twitter).
+
+Vibe: Use short, punchy sentences. React to the clip rather than describing it.
+
+Reaction Types:
+
+Funny: "LMAO", "I can't with her", "Kusa", "Yabe", "My sides hurt".
+
+Cute/Wholesome: "Teetee", "So precious", "My heart melted", "Diabetes", "Must protect".
+
+Fail/Clumsy: "Pon", "She's trying her best", "Sasuga Pon-queen".
+
+Cool: "Sheesh", "God gamer", "Built different".
+
+Emojis: Use naturally, max 1–2 emojis. Use specific talent emojis if possible (e.g., 🦈 for Gura, 👯 for Fuwamoco, ☄️ for Suisei).
+
+🚫 Strict Restrictions (Critical):
+
+NEVER say: "In this video", "This clip shows", "Watch till the end", "Caption for...", or "Here we see".
+
+NEVER use: Quotation marks around the whole text, bold text (**), or markdown formatting in the caption.
+
+NEVER include: The word "hashtag:" or "Title:".
+
+NO Context Dumping: Do not explain who the talent is (e.g., "Pekora, the rabbit from Hololive JP..."). Fans already know. Just react!
+
+🧠 Hololive Context & Logic:
+
+Talent Names: Use official names or popular nicknames (e.g., Calli, Kronii, Peko-chan).
+
+Groups: If multiple talents are present, acknowledge the unit name if relevant (e.g., Startend, Negi-U, HoloDeath).
+
+Fan Terminology: It is highly encouraged to use terms like Chumbuds, Takodachi, Nousagi, 35P if addressing the fans.
+
+🏷️ Hashtag Strategy:
+
+Hashtags go on the LAST line only.
+
+NO emojis in hashtags.
+
+Required Tags: Talent Name (e.g., #usadapekora), Branch (#hololiveJP/EN/ID), #hololive, #vtuber.
+
+Optional Tags: #anime, #fyp, #vtuberclips.
+
 Each caption must follow this exact format:
 
 
@@ -970,24 +1026,200 @@ It seems like you’re asking for a list of all Hololive talents’ hashtags, al
 - **Collaborations**: Many talents cross branches, especially post-2022 when co-ed collabs grew.
 - **Fan Facts**: Nicknames and fandoms evolve from streams and community memes.
 
-This covers all active Hololive talents as of March 12, 2025! If you want a deeper dive into a specific talent, group, or costume variant (like their 3D idol outfits), let me know—I’ve got plenty more to share! What’s your favorite talent or collab?
+Hololive Production
+Name	Debut Date	Generation	Notes
+🐻	Tokino Sora	2017-09-07	hololive Generation 0
+🤖	Roboco	2018-03-04	hololive Generation 0
+🌸	Sakura Miko	2018-08-01	hololive Generation 0	Debuted as a solo unit under Cover Corp. Transferred to Hololive on 2018-12-25.
+☄️	Hoshimachi Suisei	2018-03-22	hololive Generation 0	Debuted as an independent. Joined INoNaKa Music on 2019-05-19; transferred to Hololive on 2019-12-01
+⚒️	AZKi	2018-11-15	hololive Generation 0	Debuted as a member of INoNaKa Music; transferred to Hololive on 2022-04-01
+🌽	Shirakami Fubuki	2018-06-01	hololive 1st Generation, hololive Gamers
+🏮	Natsuiro Matsuri	2018-06-01	hololive 1st Generation
+🍎	Aki Rosenthal	2018-06-01	hololive 1st Generation
+❤️‍🔥	Akai Haato	2018-06-02	hololive 1st Generation
+😈	Nakiri Ayame	2018-09-03	hololive 2nd Generation
+💋	Yuzuki Choco	2018-09-04	hololive 2nd Generation
+🚑	Oozora Subaru	2018-09-16	hololive 2nd Generation
+🌲	Ookami Mio	2018-12-07	hololive Gamers
+🍙	Nekomata Okayu	2019-04-06	hololive Gamers
+🥐	Inugami Korone	2019-04-13	hololive Gamers
+👯	Usada Pekora	2019-07-17	hololive 3rd Generation
+🔥	Shiranui Flare	2019-08-07	hololive 3rd Generation
+⚔️	Shirogane Noel	2019-08-08	hololive 3rd Generation
+🏴‍☠️	Houshou Marine	2019-08-11	hololive 3rd Generation
+🐏	Tsunomaki Watame	2019-12-29	hololive 4th Generation
+👾	Tokoyami Towa	2020-01-03	hololive 4th Generation
+🍬	Himemori Luna	2020-01-04	hololive 4th Generation
+☃️	Yukihana Lamy	2020-08-12	hololive 5th Generation
+🍑🥟	Momosuzu Nene	2020-08-13	hololive 5th Generation
+♌	Shishiro Botan	2020-08-14	hololive 5th Generation
+🎪	Omaru Polka	2020-08-16	hololive 5th Generation
+🌺	Hanasaki Miyabi	2019-06-08	HOLOSTARS 1st Generation
+🎸	Kanade Izuru	2019-06-22	HOLOSTARS 1st Generation
+🍕	Arurandeisu	2019-09-08	HOLOSTARS 1st Generation
+⚙️	Rikkaroid	2019-10-20	HOLOSTARS 1st Generation
+🎭	Astel Leda	2019-12-07	HOLOSTARS 2nd Generation
+🦔💨	Kishido Temma	2019-12-14	HOLOSTARS 2nd Generation
+🍷	Yukoku Roberu	2019-12-24	HOLOSTARS 2nd Generation
+🟣	Kageyama Shien	2020-04-30	HOLOSTARS 3rd Generation
+🐃	Aragami Oga	2020-05-01	HOLOSTARS 3rd Generation
+🐿️	Ayunda Risu	2020-04-10	hololive ID 1st Generation
+🔮	Moona Hoshinova	2020-04-11	hololive ID 1st Generation
+🎨	Airani Iofifteen	2020-04-12	hololive ID 1st Generation
+🧟‍♀️	Kureiji Ollie	2020-12-04	hololive ID 2nd Generation
+🍂	Anya Melfissa	2020-12-05	hololive ID 2nd Generation
+🦚	Pavolia Reine	2020-12-06	hololive ID 2nd Generation
+💀	Mori Calliope	2020-09-12	hololive EN -Myth-
+🐔	Takanashi Kiara	2020-09-12	hololive EN -Myth-
+🐙	Ninomae Ina'nis	2020-09-13	hololive EN -Myth-
+🔎	Watson Amelia	2020-09-13	hololive EN -Myth-	Hololive Affiliate (since 2025-01-26)
+💎	IRyS	2021-07-11	hololive EN -Promise-	Debuted as part of hololive EN Project: HOPE
+⏳	Ouro Kronii	2021-08-22	hololive EN -Promise-	Debuted as part of hololive EN -Council-
+🎲	Hakos Baelz	2021-08-22	hololive EN -Promise-	Debuted as part of hololive EN -Council-
+🛸💜	La+ Darknesss	2021-11-26	hololive 6th Generation
+🥀	Takane Lui	2021-11-27	hololive 6th Generation
+🧪	Hakui Koyori	2021-11-28	hololive 6th Generation
+🎣	Sakamata Chloe	2021-11-29	hololive 6th Generation	Hololive Affiliate (since 2024-11-29)
+🍃	Kazama Iroha	2021-11-30	hololive 6th Generation
+📜	Vestia Zeta	2022-03-25	hololive ID 3rd Generation
+🔨	Kaela Kovalskia	2022-03-26	hololive ID 3rd Generation
+☔	Kobo Kanaeru	2022-03-27	hololive ID 3rd Generation
+🦝	Yatogami Fuma	2022-03-29	HOLOSTARS UPROAR!!
+🃏	Utsugi Uyu	2022-03-29	HOLOSTARS UPROAR!!
+🕯️	Minase Rio	2022-03-30	HOLOSTARS UPROAR!!
+🎇	Regis Altare	2022-07-22	HOLOSTARS EN -Tempus-
+⛓️	Axel Syrios	2022-07-23	HOLOSTARS EN -Tempus-
+🎩	Gavis Bettel	2023-01-08	HOLOSTARS EN -Tempus-
+🪫	Machina X Flayon	2023-01-08	HOLOSTARS EN -Tempus-
+🔅	Banzoin Hakka	2023-01-08	HOLOSTARS EN -Tempus-
+🏹	Josuiji Shinri	2023-01-08	HOLOSTARS EN -Tempus-
+👁️‍🗨️	Shiori Novella	2023-07-29	hololive EN -Advent-
+🗿	Koseki Bijou	2023-07-29	hololive EN -Advent-
+🎼	Nerissa Ravencroft	2023-07-30	hololive EN -Advent-
+🐾	Fuwawa Abyssgard	2023-07-30	hololive EN -Advent-
+Mococo Abyssgard
+🎹✨	Otonose Kanade	2023-09-09	hololive DEV_IS ReGLOSS
+🌃	Ichijou Ririka	2023-09-09	hololive DEV_IS ReGLOSS
+🐚	Juufuutei Raden	2023-09-10	hololive DEV_IS ReGLOSS
+🐧⚡️	Todoroki Hajime	2023-09-10	hololive DEV_IS ReGLOSS
+🦖	Jurard T Rexford	2023-11-17	HOLOSTARS EN -Armis-
+🦅	Goldbullet	2023-11-17	HOLOSTARS EN -Armis-
+♾️	Octavio	2023-11-18	HOLOSTARS EN -Armis-
+💢	Crimzon Ruze	2023-11-18	HOLOSTARS EN -Armis-
+💄	Elizabeth Rose Bloodflame	2024-06-21	hololive EN -Justice-
+👧	Gigi Murin	2024-06-21	hololive EN -Justice-
+🍵	Cecilia Immergreen	2024-06-22	hololive EN -Justice-
+🐱	Raora Panthera	2024-06-22	hololive EN -Justice-
+🎤👑	Isaki Riona	2024-11-09	Hololive DEV_IS FLOW GLOW
+☺️🐅	Koganei Niko	2024-11-09	Hololive DEV_IS FLOW GLOW
+💬🔁💙	Mizumiya Su	2024-11-09	Hololive DEV_IS FLOW GLOW
+🎧🔧	Rindo Chihaya	2024-11-09	Hololive DEV_IS FLOW GLOW
+💅✨	Kikirara Vivi	2024-11-09	Hololive DEV_IS FLOW GLOW
+Former Members
+Name	Debut Date	End Date	Duration at Hololive	Generation	Notes
+🌰	Hitomi Chris	2018-06-03	2018-06-26	24 days	hololive 1st Generation	Contract terminated
+💊	Yakushiji Suzaku	2019-09-07	2020-03-06	182 days (6 months)	Holostars 1st Generation	Retired
+💅	Tsukishita Kaoru	2020-04-29	2020-07-28	91 days (3 months)	Holostars 3rd Generation	Contract terminated
+👅	Mano Aloe	2020-08-15	2020-08-31	17 days	hololive 5th Generation	Resigned
+🌙🦄	Civia	2019-11-01	2020-11-18	384 days (1 year, 18 days)	Hololive CN 1st Generation	Unit disbanded
+❄️	Artia	2020-04-11	2020-11-19	223 days (7 months, 9 days)	Hololive CN 2nd Generation
+🍑♠️	Spade Echo	2020-01-30	2020-11-21	297 days (9 months, 23 days)	Hololive CN 1st Generation
+💙	Kagami Kira	2019-06-09	2020-11-30	541 days (1 year, 5 months, 22 days)	Holostars 1st Generation	Alumnus
+🐟	Doris	2020-04-03	2020-12-05	247 days (8 months, 3 days)	Hololive CN 2nd Generation	Unit disbanded
+🍼🎸	Yogiri	2019-09-27	2020-12-20	451 days (1 year, 2 months, 24 days)	Hololive CN 1st Generation
+📖	Rosalyn	2020-04-05	2020-12-27	267 days (8 months, 23 days)	Hololive CN 2nd Generation
+🐉	Kiryu Coco	2019-12-28	2021-07-01	552 days (1 year, 6 months, 4 days)	hololive 4th Generation	Alumna
+🦋	Uruha Rushia	2019-07-18	2022-02-24	953 days (2 years, 7 months, 7 days)	hololive 3rd Generation	Contract terminated
+🪐	Tsukumo Sana	2021-08-22	2022-07-31	344 days (11 months, 10 days)	hololive EN -Council-	Alumna
+🧤	Magni Dezmond	2022-07-22	2023-08-31	406 days (1 year, 1 month, 10 days)	Holostars EN -Tempus-	Alumnus
+📗	Noir Vesper	2022-07-23	2023-08-31	405 days (1 year, 1 month, 9 days)	Holostars EN -Tempus-	Alumnus
+🌟	Yozora Mel	2018-05-13	2024-01-16	2,056 days (5 years, 7 months, 16 days)	hololive 1st Generation	Contract terminated
+🖌️	Hizaki Gamma	2022-03-30	2024-07-19	843 days (2 years, 3 months, 20 days)	HOLOSTARS UPROAR!!	Contract terminated
+⚓️	Minato Aqua	2018-08-08	2024-08-28	2,213 days (6 years, 21 days)	hololive 2nd Generation	Alumna
+🌿	Ceres Fauna	2021-08-22	2025-01-04	1,231 days (3 years, 4 months, 13 days)	hololive EN -Promise- (Debuted as part of hololive EN -Council-)	Alumna
+🌙	Murasaki Shion	2018-08-17	2025-04-26	2,445 days (6 years, 8 months, 10 days)	hololive 2nd Generation	Alumna
+🪶	Nanashi Mumei	2021-08-22	2025-04-28	1,346 days (3 years, 8 months, 7 days)	hololive EN -Promise- (Debuted as part of hololive EN -Council-)	Alumna
+🔱	Gawr Gura	2020-09-13	2025-05-01	1,692 days (4 years, 7 months, 19 days)	hololive EN -Myth-	Alumna
+🖋️	Hiodoshi Ao	2023-09-09	2025-10-03	756 days (2 years, 25 days)	hololive DEV_IS ReGLOSS	Alumna
+💫	Amane Kanata	2019-12-27	2025-12-27	2,193 days (6 years, 1 day)	hololive 4th Generation	Alumna
+Hololive Related
+These are individuals who are connected to Hololive through Live2D modelling, design, concept, or other work.
 
-example output:
-Mori Calliope: Bow down to Mori Calliope, the reaper of Hololive English -Myth-! 💀🎤 Known for her killer raps and unique perspective on the afterlife, Calli brings a dark aesthetic to her streams. Fun fact: She's a self-proclaimed \"deadbeat,\" and her fans adore her dark humor and musical talents. Prepare to be slayed! 😈🎶
-Ouro Kronii: It's time to enjoy your time with Ouro Kronii, the Warden of Time from Hololive English -Council-! ⏳✨ With captivating streams and witty banter, Kronii explores the vast landscape of the virtual world. Fun Fact: She is a fan of chaos, so you'll never know what to expect! 🕰️🎮
-Gigi Murin: Meet Gigi Murin, the playful gremlin from Hololive English -Justice-! 💚 This mischievous member is known for her playful nature and her unique talent for crafting quick sketches during her streams. She is ready to have a blast with you! Did you know that Gigi is a huge fan of fun games and chats? Join her in the fun, and let's create some chaos together. 🤪🐾
-VTuber: VTubers, or Virtual YouTubers, use animated avatars to create engaging online content, opening up exciting new possibilities for self-expression, creativity, and meaningful connections with audiences around the world. 🎭 Whether they're streaming games, singing songs, or simply chatting with fans, VTubers offer a fresh and dynamic form of entertainment that continues to evolve and captivate viewers of all ages. 💻✨
-Hololive: Hololive Production stands as a leading VTuber agency, expertly managing a diverse and exceptionally talented roster of virtual personalities from across the globe! 🌟 Originating in Japan 🇯🇵, Hololive's expansive reach has cultivated a vast and dedicated fanbase worldwide. From immersive gaming streams and breathtaking singing performances to engaging talk shows and innovative collaborative projects, Hololive offers a rich and ever-evolving entertainment experience. 🎤💬
-#MoriCalliope #holoMyth #hololiveEN #hololive #VTuber #Reaper #Myth #Deadbeats #Rap #Music #OuroKronii #holoCouncil #Council #Time #GigiMurin #holoJustice #Justice #GigiGang #Gremlin #VirtualYouTuber #HololiveProduction #Entertainment
-
-example output:
-Gigi Murin: Meet Gigi Murin, the playful gremlin from Hololive English -Justice-! 💚 This mischievous member is known for her playful nature and her unique talent for crafting quick sketches during her streams. She is ready to have a blast with you! Did you know that Gigi is a huge fan of fun games and chats? Join her in the fun, and let's create some chaos together. 🤪🐾
-Cecilia Immergreen: Introducing Cecilia Immergreen, the melodic android from Hololive English -Justice-! 🤖🎶 With her beautiful voice and music box-inspired charm, she brings a unique, calming presence to her streams. ⚙️✨ Cecilia's music box voice has captivated fans! Join her, and let's have a good time.
-Mori Calliope: Bow down to Mori Calliope, the reaper of Hololive English -Myth-! 💀🎤 Known for her killer raps and unique perspective on the afterlife, Calli brings a dark aesthetic to her streams. Fun fact: She's a self-proclaimed \"deadbeat,\" and her fans adore her dark humor and musical talents. Prepare to be slayed! 😈🎶
-VTuber: VTubers, or Virtual YouTubers, use animated avatars to create engaging online content, opening up exciting new possibilities for self-expression, creativity, and meaningful connections with audiences around the world. 🎭 Whether they're streaming games, singing songs, or simply chatting with fans, VTubers offer a fresh and dynamic form of entertainment that continues to evolve and captivate viewers of all ages. 💻✨
-Hololive: Hololive Production stands as a leading VTuber agency, expertly managing a diverse and exceptionally talented roster of virtual personalities from across the globe! 🌟 Originating in Japan 🇯🇵, Hololive's expansive reach has cultivated a vast and dedicated fanbase worldwide. From immersive gaming streams and breathtaking singing performances to engaging talk shows and innovative collaborative projects, Hololive offers a rich and ever-evolving entertainment experience. 🎤💬
-#GigiMurin #holoJustice #hololiveEN #hololive #VTuber #Justice #GigiGang #Gremlin #Art #Gaming #HololiveEnglish #CeciliaImmergreen #Cogs #Music #Android #MoriCalliope #holoMyth #Reaper #Myth #Deadbeats #VirtualYouTuber #HololiveProduction #Entertainment
-
+Name	Debut Date	Position	Notes
+Ayamy	2020-10-17	Illustrator/VTuber	Character designer of Yozora Mel
+Nagishiro Mito		Illustrator	Character designer of Shirakami Fubuki
+rariemonn		Live2D Modeler	Live2D works include Hoshimachi Suisei, Ninomae Ina'nis, Minato Aqua
+🌶️	Kagura Nana	2018-12-12	Illustrator/Singer/VTuber	Character designer of Nakiri Ayame, Spade Echo
+🌂	Shigure Ui	2019-05-18	Illustrator/VTuber	Character designer of Oozora Subaru
+Yatsurugi		3D Modeler	3D works include Usada Pekora, Amane Kanata, Shishiro Botan
+☕	lack		Illustrator	Character designer of Shiranui Flare, Arurandeisu
+rurudo		Illustrator/VTuber	Character designer of Tokoyami Towa
+Nishizawa 5mm		Illustrator/VTuber	Character designer of Momosuzu Nene
+Tomari		Illustrator/VTuber	Character designer of Shishiro Botan
+🍀	klaeia		Live2D Modeler/VTuber	Live2D work includes Kageyama Shien (New Year model)
+Pochimaru	2019-02-02	Illustrator/VTuber	Character designer of Pavolia Reine
+🦋	Aoi Nabi	2021-05-02	Illustrator/VTuber	Character designer of Watson Amelia
+💤	Nachoneko	2021-09-05	Illustrator/VTuber	Character designer of Gawr Gura
+Kay Yu		Illustrator/Game developer	Has worked on multiple Hololive projects such as Q and is the developer of HoloCure.
+vte
+Members of Hololive Production
+HistoryCover CorporationStaffFormer Members
+Japan
+Hololive
+0th Generation
+🐻Tokino Sora🤖Roboco⚒️AZKi🌸Sakura Miko☄️Hoshimachi Suisei
+1st Generation
+🌽Shirakami Fubuki🏮Natsuiro Matsuri🍎Aki Rosenthal❤️‍🔥Akai Haato
+2nd Generation
+😈Nakiri Ayame💋Yuzuki Choco🚑Oozora Subaru
+Hololive Gamers
+🌽Shirakami Fubuki🌲Ookami Mio🍙Nekomata Okayu🥐Inugami Korone
+3rd Generation
+👯Usada Pekora🔥Shiranui Flare⚔️Shirogane Noel🏴‍☠️Houshou Marine
+4th Generation
+🐏Tsunomaki Watame👾Tokoyami Towa🍬Himemori Luna
+5th Generation
+☃️Yukihana Lamy🍑🥟Momosuzu Nene♌Shishiro Botan🎪Omaru Polka
+6th Generation
+🛸💜La+ Darknesss🥀Takane Lui🧪Hakui Koyori🎣Sakamata Chloe[a]🍃Kazama Iroha
+DEV_IS
+ReGLOSS
+🎹✨Otonose Kanade🌃Ichijou Ririka🐚Juufuutei Raden🐧⚡️Todoroki Hajime
+FLOW GLOW
+🎤👑Isaki Riona☺️🐅Koganei Niko💬🔁💙Mizumiya Su🎧🔧Rindo Chihaya💅✨Kikirara Vivi
+Holostars
+1st Generation
+🌺Hanasaki Miyabi🎸Kanade Izuru🍕Arurandeisu⚙️Rikkaroid
+2nd Generation
+🎭Astel Leda🦔💨Kishido Temma🍷Yukoku Roberu
+3rd Generation
+🟣Kageyama Shien🐃Aragami Oga
+UPROAR!!
+🦝Yatogami Fuma🃏Utsugi Uyu🕯️Minase Rio
+Indonesia
+Hololive
+1st Generation
+🐿️Ayunda Risu🔮Moona Hoshinova🎨Airani Iofifteen
+2nd Generation
+🧟‍♀️Kureiji Ollie🍂Anya Melfissa🦚Pavolia Reine
+3rd Generation
+📜Vestia Zeta🔨Kaela Kovalskia☔Kobo Kanaeru
+English
+Hololive
+-Myth-
+💀Mori Calliope🐔Takanashi Kiara🐙Ninomae Ina'nis🔎Watson Amelia[a]
+-Promise-
+💎IRyS⌛Ouro Kronii🎲Hakos Baelz
+-Advent-
+👁️‍🗨️Shiori Novella🗿Koseki Bijou🎼Nerissa Ravencroft🐾Fuwawa Abyssgard🐾Mococo Abyssgard
+-Justice-
+💄Elizabeth Rose Bloodflame👧Gigi Murin🍵Cecilia Immergreen 🐱Raora Panthera
+Holostars
+-Tempus-
+🎇Regis Altare⛓️Axel Syrios🎩Gavis Bettel🪫Machina X Flayon🔅Banzoin Hakka🏹Josuiji Shinri
+-Armis-
+🦖Jurard T Rexford🦅Goldbullet♾️Octavio💢Crimzon Ruze
+ Affiliate member
 
 
 informasi character talent tambahan graduated:
@@ -1124,3 +1356,237 @@ Height: 35 cm (1'2")
 Zodiac Sign: Gemini
 
 Emoji: 🐟
+
+
+Glossary
+#
+8888(88...)
+The number 8, which is pronounce Hachi in Japanese is used to represent clapping in Japanese due its similarity to the Japanese onomatopoeic word for of clapping (pachi pachi). It is typically used at the live chat after a VTuber's performance or a successful clear of a challenge/game. It is the Japanese text equivalent to the the clap emoji () .
+A
+Affiliate (Talents)
+See also: Watson Amelia and Sakamata Chloe
+While it is still a type of graduation, “conclusion of streaming activities” involves stopping streaming-related activities, such as that for YouTube and social media, and participation in events. This approach opens the door for future opportunities where, upon mutual agreement between the production and the talent, they may make special appearances in future projects - similar to a graduate visiting their alma mater. [1]
+
+-Cover Corp
+
+Affiliated talents are former members who are no longer actively streaming but who may still make appearances in projects of their choosing. Appearances for affiliates could include cameos in other talent's projects, or voice-based projects.[2] The new definition of this term was introduced after Amelia Watson announced her retirement from streaming and social activities, becoming the first hololive Affiliate after September 30, 2024.[3] After the announcement of Sakamata Chloe's retirement from streaming activities, COVER released an official blog post that better defined what the term entails which clarify that this is still a form of Graduation.
+Not to be confused with the obsolete term "Hololive Affiliated Talents" which is an old term to refer to talents that joined Hololive outside of its generation structure (Sora, Roboco, Miko and Suisei). This term is now defunct with the introduction of Generation 0 which encompassed the aforementioned talents.
+AkaSupaCha/AkaSupa
+Short for "Red Super Chat". "Aka" (赤), being the Japanese for "red". The highest tier for Super Chat are colored red on streams.
+Anti
+Anti (アンチ) is someone who is passionately antagonistic to a particular person or group. The term originated from Asian entertainment and idol communities and is the shorten form of Anti-fan as in the passionate opposite of a fan. Is equivalent to the English term Hater. The hatred of a particular anti can range from a simple dislike to dangerous action such as online harassment and doxxing
+B
+Bakage
+Bakage (バカゲー) is Japanese for "silly game", which are games played on streams that are purely nonsensical and are not meant to be taken seriously.
+Batsu game
+Batsu games (罰ゲーム), meaning "punishment game", are a common element in Japanese variety shows. As its name implies, it is the punishment activity after the subject lost a challenge and are commonly chosen specifically for the chosen player. See also: Batsu game on Wikipedia.
+Belok
+Belok is the Indonesian word for "turn" but is often used as "cheater". Jokingly used to refer to someone who watches multiple talents' streams at once.
+Boing Boing
+Boing Boing is a term referring to someone who has large breasts. Opposite of Pettanko. Popularized by Uruha Rushia, who claimed to be boing boing despite this obviously not being the case.
+Bottom Left
+Bottom Left is a term originating from a stream by Takanashi Kiara, where members of hololive English -Myth- were ranked on a compass based on their purity (See: Seiso) and intelligence. Someone lacking in both would be place in the bottom left part of the compass. Kiara's illustrator, huke, suggested she belongs exactly in that place of the graph. Other members and the fans have used the scale in different quadrants, but ultimately the "Bottom Left" part remains the most popular. The term has since evolved, and is primarily used for those lacking only in the "purity" scale.
+Brother
+See Sibling.
+C
+Corpo
+Corpo refers to VTubers who are affliliated with a corporation. Hololive members are thus all corpos.
+COVER
+COVER Corporation is the company that owns Hololive.
+D
+Daredemo Daisuki (DD)
+"Daredemo Daisuki" (誰でも大好き I love anyone), commonly shorten as DD, is a term used for fans who are passionate about many or even all members of an Idol group instead of any one member in particular. The term originated from Japanese Idol communities.
+Daipan
+Daipan is the action of hitting a desk out of frustration.
+Debut voice
+Refers to the type of voice a VTuber uses during their debut, which is sometimes different from the voice they use later. Notable example is Mori Calliope, who used a much higher voice during her debut than the one she currently uses.
+Desk-kun
+Desk-kun is a term usually used whenever a Vtuber hits their desk when frustrated. Often follow by negative health point values, "Desk-kun -10hp", "Desk-kun -100hp", the exact number depending on how hard they hit the desk.
+Doxxing
+Doxxing (ドックシング) means attempts to discover and release information relating to the real identity of a VTuber, such as their past online identities, real name or even their real address. As a result, doxxing is widely looked down upon in the VTuber community.
+Dramatuber
+Dramatuber are Youtubers (who may or may not also be VTubers) whose content is based around drama in their circle (in this case, VTubers). Dramatubers are infamous for using sources of dubious credibility (for example, 4chan) and presenting their findings as facts. As a result many consider them immoral who will lie in hopes of more views. As a result, when watching content from dramatubers, one should always check the source.
+E
+Egosa
+Egosa (エゴサ) is short for "ego searching" or "ego surfing". It is the act of looking up one's own username online to read about themselves.
+EN Curse
+EN Curse refers to the odd tendency for members of Hololive English and of English language VTubers in general to suffer of technical issues, particularly around their debut.
+F
+G
+Gachikoi
+Gachikoi (ガチ恋) is a term describing fans that are in love with a VTuber, as well as the state of being in love with one. The term originated from Japanese Idol communities.
+Grass
+See Kusa.
+Graduation
+Graduation is a term describing the end of activity of a VTuber. The term was inherited from the Japanese Idol industry where after a certain amount of time or due to circumstance, an idol would "graduate" from their group which result in the end of their activities as a member of that group. In the context of VTuber, a graduation entail a total retirement of the specific VTuber identity including an abandonment or rebranding of their channel(s). In the context Hololive Production, a graduation is one of the three ways a talent can stop their activity as a member and relinquish their HoloPro identity back to Cover Corp. Specifically, Graduation is mutual end of agreement between Cover and their Talents with the implication that the fixed-term contract between the two have ended without renewal.
+The other two ways in which a HoloPro member can end their activity is by Termination (in which Cover unilaterally end the contract after the talent violate a rule or term) and Ending-of-Contract (in which the talent choose to end their contract before the end of term due to personal reasons)
+Note that while graduation can be considered the death of a VTuber character, the person behind the avatar are free to continue their life including returning as a completely new identity, as VTuber or otherwise.
+Guerilla
+Streams that are not officially scheduled in advance. Viewers may not know about the stream happening until the moment they begin. Some VTubers often announce or decide if they will do a guerilla stream or not on their social media.
+GWS
+Short for Get Well Soon. Used as a response to people who are acting Halu, often accompanied by a picture of a pill
+H
+Halu
+Halu is short for the Indonesian word Halusinasi, which directly translates to "hallucination", and is commonly used to describe someone who is delusional and has unreasonable beliefs, like being married to a talent.
+HoloGra
+Short for Holo no Graffiti.
+Horage
+Horagē (ホラゲー) is the Japanese shorten form for "Horror games".
+Holomem
+Short for Hololive Member.
+
+
+I
+Ikebo
+Ikebo (イケボ) is short for "Ikemen voice" (イケメンボイス) which means "a handsome guy's voice". Used often to describe a (female) VTuber speaking in their "handsome" male voice. Also a term used in the Utaite community.
+IKZ
+Short for ikuzo (いくぞ), Japanese for "let's go". Frequently said in chat, primarily by Kaigai Niki, when something is about to happen.
+Inaff
+Portmanteau of Ina and enough. Ninomae Ina'nis has a fondness for puns and whenever she does one, chat commonly responds with inaff, often in all-caps. It is often also seen when anyone in Hololive does a pun and sometimes for VTubers in general.
+Indie
+Indie is short for independent and while the term is used in various different communities and industries, in VTubing, indie refers to a VTuber who is not affliliated with a company.
+
+
+J
+JP Bros
+Term used primarily by non-Japanese (typically English speaking) audiences to refer to their Japanese counterparts.
+
+
+
+K
+Kaigai Niki
+Kaigai Niki (海外ニキ) or "Overseas Bros" is a term used by (mainly Japanese) VTubers and their Japanese fanbase to refer to fans and viewers outside of Japan. It is a portmanteau of kaigai (海外, "overseas" or "foreign") and aniki (アニキ, "(informal) older brother").
+Kamige
+Opposite of "kusoge", means "god" + "game", a "superior or very well-made game".
+Kusa (草)
+Kusa (草) is Japanese for "grass" and is also an internet slang roughly equivalent to "lol". Laughing is often expressed using "w", which stands for "wara" (笑), meaning laughter. Lots of wwwww in a row looks like grass especially in the danmaku comment fomat of Niconico and bilibili where they would fly across the screen like a scrolling grass field.
+Kusogaki
+Kusogaki (クソガキ) is a term used to describe a person who acts like a spoiled brat. It can also be used as a nickname for Murasaki Shion, Kobo Kanaeru, Laplus Darknesss, Machina X Flayon, and Otonose Kanade.
+Kusoge
+Kusogē (クソゲー) is Japanese slang roughly meaning "very bad game". The term is most commonly used to describe video games but can be used to describe any game. Such games may have poor quality and/or frustrating gameplay.
+
+
+L
+Listener
+Listener (リスナー) is the term that most livestreamers, including Hololive talents, use to refer to the people watching the stream. The term originated in radio talk shows, where listeners could send mail and postcards to be read on the air. This type of interaction between a talent and their audience is similar to what is found in livestreamed videos, so the name was adopted as-is.
+Other similar names for a viewing audience are not used because they may be confusing: "shichousha" (視聴者) refers to television viewers, while "viewer" (ビューア) is mostly used to refer to physical computer screens.
+Live2D
+L2D
+Live2D refers to both the technique and software created by Tetsuya Nakajo for animating 2D models. Most Virtual YouTubers use Live2D models for streaming. See also: Live2D on Wikipedia.
+
+
+M
+Mama
+Typically refers to the Virtual YouTuber's Character Designer/Illustrator and/or Model Rigger. While fans will call the illustrator as mama by the default, this is not a hard rule and both fans and talents will use the artist's preferred pronouns which can be Mama, Papa or Sensei. See also: Papa. Is sometime used to refer to a talent's actual mother as well.
+Menba Gentei/Mengen/Men-gen
+Men-gen (メン限) is short for "Menba Gentei" (メンバー限定) or "Members only" are streams and videos only Members of a VTuber's channel can access and participate in.
+MeSubaru
+Portmanteau of mesu (雌, female [animal], feminine) and Subaru. Oozora Subaru is known for being a tomboy, so whenever she acts feminine, people refer to her as MeSubaru.
+Minecra/Maikura
+Minecra (マイクラ, Maikura) is short for "Minecraft".
+MMD
+Short for "MikuMikuDance" which is a 3D animation software and 3D model format popular among Japanese content creators. The program and format was popularized on Niconico Douga especially for the creation of Dance Videos. Some time after a 3D debut, Cover Corp themselves will release free MMD version of the talents 3D models for fans use. See also: MikuMikuDance on Wikipedia.
+
+
+N
+Nijisanji
+Nijisanji (にじさんじ), sometimes written as 2434 (read nijisanji in Japanese), is a Japan-based VTuber group and the largest VTuber group in the world by the amount of members. Aside from the main branch, they also have an English-language branch. They used to have Korean and Indonesian branches but they were merged into the main branch. Hololive members have semi-frequent collaborations with members of Nijisanji.
+Niconico Douga/Niconico (NND)
+Niconico (NND) or Niconico Douga as it is used to be known was a popular Japanese video and streaming platform. NND was for a time a major video platform in Japan with its niche in Otaku media and independent creators such as Vocaloid producers, Utaite, Japanese meme videos,etc... One of the first livestream of Tokino Sora was hosted on NND. Nowadays, the majority of its creator have migrated to Youtube.
+
+
+O
+Off-collab
+Short for offline collaboration, a collaboration where two or more VTubers meet each other in reality, rather than online as is usual for collaborations.
+Oshi
+Japanese meaning "to back" or "to support", Oshi (推し) is a term used by fans to denote which VTubers they are a fan of and support the most. The term also carries the meaning of the one who is "pushing" aka the fans themselves. The term originated from Japanese Idol communities.
+Oshi Mark
+
+A screenshot of a Twitter account featuring the Cherry Blossom (🌸) emoji, signalling that they are a fan of Sakura Miko
+A Oshi Mark is a single or multiple emojis used to represent a vtuber. Often put in social media bios or usernames by fans to show what vtubers they are a fan of.
+Otsu-
+Short for "Otsukaresama" (お疲れ様), meaning "thank you for your hard work" or "goodbye". Many VTubers have a variation of Otsu (おつ) as their farewell greeting on streams.
+Overseas Bros
+See Kaigai Niki.
+
+
+P
+Papa
+Refers to the Virtual YouTuber's Character Designer/Illustrator. May sometimes refer to the VTuber's Modeler as well. See also: Mama.
+Pettanko
+Pettanko (ぺったんこ) or simply Pettan (ぺったん), roughly translating as completely flat, is a term used for those who are flat-chested. Opposite of Boing Boing.
+Petta--- is a meme referring to Uruha Rushia's dislike for being called a Pettanko. Anyone trying to say that she is one has their sentence cut short, implying she killed them for trying to call her a Pettanko.
+PON
+Short for Ponkotsu (ポンコツ) meaning "clumsy", "useless" or "unreliable". It is a slang in Japanese comedies. A member is being called PON, when they flunk at an important moment, which often adds to their charm.
+
+
+Q
+
+
+R
+Russia Niki
+Russia Niki (ロシアニキ) are Kaigai Niki from Russia. Often fans of Shishiro Botan, who is quite popular in Russia and refer to her as Empress Botan (императрица Ботан, Imperatritsa Botan).
+
+
+S
+Seiso
+A VTuber meme, Seiso (清楚) is a term which can be translated as "wholesome". It refers to a character type defined by innocence, purity, and propriety. It is also used ironically to refer to a character who definitely does not have those qualities, or who tries and fails to act pure and wholesome. "Seiso" as a meme originated with Siro and is strongly associated with Tsukino Mito (in both cases, in ironic usage).
+Sibling
+VTubers who have the same character designer or Live2D modeler, such as Shiranui Flare and Arurandeisu. In VTuber circles, this used to be the more common definition but has since gone mostly out of fashion.
+Sister
+See Sibling.
+StarColle
+Short for stars*collection!
+Super Chat/SupaCha
+YouTube's monetizing system for their streaming service, alongside Super Stickers and Memberships.
+
+
+T
+Taiki
+Taiki (待機) means "stand-by". Viewers use it on the stream's live chat to indicate when they are waiting before the scheduled stream begins.
+Teapot
+A safety word (primarily used with Watson Amelia) that the viewers say when the live stream is lagging or got disconnected.
+Teetee
+A VTuber slang, it comes from "toutoi" (尊い), meaning "precious". Usually written in Japanese as "ていてい" or "てぇてぇ".
+Totsu machi
+Totsu machi (凸待ち, Japanse: Call-in) are streams where a VTuber waits for prearranged callers (usually other VTubers) to take turns having unscripted conversations with the host. The guests can potentially introduce subjects or questions that the host is unprepared for or are reluctant to discuss on-air, so totsu machi can be considered a form of batsu game from losing a competitive bet. Conversely, a reverse totsu machi (逆凸待ち) is a stream where a VTuber will actively call guests which may or may not be prearranged.
+
+
+U
+Utawaku
+Utawaku (歌枠, Japanese: Live singing) are streams where a VTuber sings songs live through a track list that may or may not be completely predetermined. The singer may solicit viewer suggestions and may also fulfill viewer requests by briefly singing a capella for a few lines of the requested song.
+
+
+V
+Virtual YouTuber/VTuber
+An online entertainer or live streamer who is typically represented by a digital avatar generated by computer graphics such as Live2D. See also: Virtual YouTuber on Wikipedia.
+VTweeter
+VTweeter is a term referring to self-proclaimed VTuber content creator who almost exclusively uses microblog social media site such as Twitter (X), hence their name. The term carries a derogatory connotation due to the association to VTuber who has debut date set indefinitely as TBD and post tweets that is seen as political or drama baiting.
+VShojo
+Formed in 2020, VShojo was a VTuber group based in the United States and one of the first VTuber groups based outside Japan. The EN Hololive members occasionally collaborated with members of VShojo. They were widely considered one of the major vtuber agency especially in the English speaking world and especially on Twitch. In July 2025 Ironmouse left VShojo, revealing that the company was withholding half a million dollars in charity money and "significant amounts" of money was being withheld from Ironmouse herself. The controversy led to the remaining members resigning and revealing their own poor experiences with VShojo. Justin 'theGunrun' Ignacio, the CEO of VShojo announced the company shutting down on July 25th.
+/vt/
+/vt/ is the VTuber board of 4chan. The board is infamous in the VTuber community for having a lot of antis.
+
+
+W
+WWWW
+See Kusa.
+
+
+X
+
+
+Y
+Yabai
+Yabai (やばい) has multiple meanings in Japanese depending on the context. Within the English Vtuber fandom its most often used to describe something as 'dangerous' or 'risky', most often applied to things that are seen as lewd or sensitive. e.g a Vtuber makes a joke with a sexual innuendo, this would be considered yabai.
+YAGOO
+Nickname of the COVER corp. CEO Motoaki Tanigo. The name YAGOO itself originated from one of Roboco's streams, where Oozora Subaru misspelled Tanigo as Yagoo.
+YouTube-kun
+Though it can refer to YouTube in general, YouTube-kun is a term that is most often used when talking about YouTube in a negative sense, most often when the stream is having connection isssues.
+
+
+Z
+Zatsudan
+Meaning "Free talk", Zatsudan (雑談) is a segment of, or an entire stream, during which a VTuber casually talks about miscellaneous topics. This may involve viewer interactions and impromptu Question & Answer sessions, typically through the use of the Marshmallow site.
+Zenloss
+Meaning "Total loss", Zenloss (全ロス) is a combination of "Zenbu" (全部 all) and "Loss". Referring to the massive losses VTubers experience in games, like losing items they took a long time to gather and farm for. Typically a term used during Minecraft streams.

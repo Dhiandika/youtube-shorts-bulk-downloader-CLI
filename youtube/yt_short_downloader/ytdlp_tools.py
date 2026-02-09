@@ -67,9 +67,10 @@ def detect_best_hd_selector(
 
     def rank_codec(v: str) -> int:
         vv = (v or "").lower()
-        if "av01" in vv or "av1" in vv: return 3
+        # USER REQUEST: Prefer H.264/AVC for compatibility
+        if "h264" in vv or "avc1" in vv: return 3
         if "vp9" in vv: return 2
-        if "h264" in vv or "avc1" in vv: return 1
+        if "av01" in vv or "av1" in vv: return 1
         return 0
 
     for extargs in _CLIENTS:

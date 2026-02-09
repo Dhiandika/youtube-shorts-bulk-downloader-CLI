@@ -7,6 +7,8 @@ __all__ = [
     "create_safe_filename",
     "validate_filename",
     "get_unique_filename",
+    "normalize_upload_date",
+    "parse_upload_date",
 ]
 
 def _ascii_only(s: str) -> str:
@@ -56,4 +58,36 @@ def get_unique_filename(base_path: str, filename: str) -> str:
         if not os.path.exists(os.path.join(base_path, new_filename)):
             return new_filename
         counter += 1
+
+
+def normalize_upload_date(upload_date: str | None) -> str | None:
+    """
+    - 'YYYYMMDD' -> 'YYYY-MM-DD'
+    - 'YYYY-MM-DD' -> tetap
+    - selain itu -> None
+    """
+    if not upload_date:
+        return None
+    s = str(upload_date).strip()
+    if len(s) == 8 and s.isdigit():
+        return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    # izinkan sudah yyyy-mm-dd
+    try:
+        from datetime import datetime
+        datetime.strptime(s, "%Y-%m-%d")
+        return s
+    except Exception:
+        return None
+
+
+def parse_upload_date(upload_date: str | None):
+    from datetime import datetime
+    iso = normalize_upload_date(upload_date)
+    if not iso:
+        return None
+    try:
+        return datetime.strptime(iso, "%Y-%m-%d")
+    except Exception:
+        return None
+
 
