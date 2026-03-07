@@ -6,6 +6,15 @@ import subprocess
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Tuple
 
+# ══════════════════════════════════════════════════════════════
+# ⚙️  KONFIGURASI — Ganti file sumber channel di sini
+# ══════════════════════════════════════════════════════════════
+# "active_channels.txt" → hanya channel yang aktif upload (Daily/Active/Occasional)
+#                         hasil dari check_channel_activity.py
+# "short_link.txt"      → semua channel (termasuk yang inactive)
+LINK_FILE: str = "short_link.txt"
+# ══════════════════════════════════════════════════════════════
+
 # Optional local modules (imported lazily/safely later)
 # import sort
 # import cek_resolusi
@@ -262,7 +271,7 @@ def main():
             return
 
         # Load links
-        link_file = os.path.join(os.path.dirname(__file__), "short_link.txt")
+        link_file = os.path.join(os.path.dirname(__file__), LINK_FILE)
         links = load_channel_links(link_file)
         
         if not links:

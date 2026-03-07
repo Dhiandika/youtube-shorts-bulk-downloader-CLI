@@ -34,3 +34,4 @@ def get_short_links(channel_url: str, max_videos: int | None = None):
         with open("download_errors.log", "a", encoding="utf-8") as log_file:
             log_file.write(f"Error fetching video list from {channel_url}:\n{tb}\n")
         return [], ""
+        

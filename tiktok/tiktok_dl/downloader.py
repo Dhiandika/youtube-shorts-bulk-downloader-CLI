@@ -91,6 +91,7 @@ def download_one_video(entry: dict, output_path: str, author_name: str,
         "--ignore-errors",
         "--no-check-certificates",
         "--no-playlist",
+        "--no-abort-on-unavailable-fragment",
         "-f", fmt,
         url
     ]

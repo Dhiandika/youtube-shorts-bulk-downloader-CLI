@@ -3,8 +3,14 @@ import traceback
 
 from .utils import is_tiktok_url
 from .utils import normalize_input_to_url_list as normalize
-# dipakai di cli
 normalize_input_to_url_list = normalize
+
+class _SilentLogger:
+    """Buang semua output yt-dlp Python API (termasuk ERROR)."""
+    def debug(self, msg): pass
+    def info(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): pass
 
 def extract_entries_from_source(src_url: str, max_videos=None, cookies_from_browser=None):
     """
@@ -13,6 +19,8 @@ def extract_entries_from_source(src_url: str, max_videos=None, cookies_from_brow
     is_single = "/video/" in src_url
     ydl_opts = {
         "quiet": True,
+        "logger": _SilentLogger(),
+        "ignoreerrors": True,
         "extract_flat": False if is_single else "in_playlist",
         "playlistend": max_videos if max_videos else None,
     }
@@ -55,9 +63,11 @@ def extract_entries_from_source(src_url: str, max_videos=None, cookies_from_brow
         return [], None
 
 def fetch_full_metadata(url: str, cookies_from_browser: str = None):
-    """Ambil metadata lengkap untuk satu video TikTok (non-flat)."""
+    """Ambil metadata lengkap untuk satu video TikTok. Return None jika gagal."""
     ydl_opts = {
         "quiet": True,
+        "logger": _SilentLogger(),
+        "ignoreerrors": True,
         "skip_download": True,
     }
     if cookies_from_browser:
@@ -67,9 +77,7 @@ def fetch_full_metadata(url: str, cookies_from_browser: str = None):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
         return info
-    except Exception as e:
-        with open("download_errors.log", "a", encoding="utf-8") as log:
-            log.write(f"fetch_full_metadata fail for {url}: {e}\n")
+    except Exception:
         return None
 
 def tiktok_caption_text(meta: dict) -> str:

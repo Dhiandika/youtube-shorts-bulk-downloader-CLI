@@ -17,7 +17,7 @@ FOLDER_PATH = os.path.join(BASE_DIR, "new_week", "1080x1920")
 
 # Masukkan hashtag yang ingin kamu tambahkan di sini
 # Update: Daftar hashtag baru sesuai request (Japanese characters preserved)
-HASHTAG_TO_ADD = "#shorts #hololivejp #hololiveindonesia #hololiveID #hololiveenglish #hololiveEN #ホロライブ #hololive #vtuber #fblifestyle " 
+HASHTAG_TO_ADD = "#hololivejp #hololiveindonesia #hololiveID #hololiveenglish #hololiveEN #ホロライブ #hololive #vtuber" 
 # ===============================================
 
 def safe_print(text):

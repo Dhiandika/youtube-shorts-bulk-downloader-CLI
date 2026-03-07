@@ -22,83 +22,69 @@ BLACKLIST_KEYWORDS = ["Nimi", "Promosi", "Iklan"]
 DB_PATH = os.path.join(os.getcwd(), "data", "ytshorts.db")
 
 def _load_db_map():
-    """Load map {safe_title: upload_date_timestamp} from DB."""
+    """Load map {video_id: upload_date_timestamp} from DB."""
     if not os.path.exists(DB_PATH):
         return {}
-    
+
     mapping = {}
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            # Ambil semua video yang punya upload_date
-            cur = conn.execute("SELECT title, upload_date FROM videos WHERE upload_date IS NOT NULL")
-            for title, up in cur.fetchall():
-                 if not title or not up: continue
-                 
-                 # Buat key yang sama dengan cara downloader menamai file
-                 # Note: downloader memotong di 100/80 char, kita coba match substring
-                 safe = create_safe_filename(title, 200) # ambil agak panjang untuk matching
-                 
-                 dt = parse_upload_date(up)
-                 if dt:
-                     mapping[safe] = time.mktime(dt.timetuple())
+            cur = conn.execute(
+                "SELECT video_id, upload_date FROM videos WHERE upload_date IS NOT NULL"
+            )
+            for vid_id, up in cur.fetchall():
+                if not vid_id or not up:
+                    continue
+                dt = parse_upload_date(up)
+                if dt:
+                    mapping[vid_id] = time.mktime(dt.timetuple())
     except Exception as e:
         print(f"[WARN] Gagal baca DB: {e}")
     return mapping
 
+
+def _get_video_id_from_txt(video_path: str) -> str | None:
+    """
+    Baca file .txt pasangan video, ambil video_id YouTube dari baris 'Link:'.
+    Format txt:
+      YouTube: Channel Name
+      Link: https://www.youtube.com/watch?v=VIDEO_ID
+    """
+    txt_path = os.path.splitext(video_path)[0] + ".txt"
+    if not os.path.exists(txt_path):
+        return None
+    try:
+        with open(txt_path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if line.lower().startswith("link:"):
+                    url = line.split(":", 1)[-1].strip()
+                    # Format: ?v=VIDEO_ID
+                    m = re.search(r'[?&]v=([A-Za-z0-9_-]{11})', url)
+                    if m:
+                        return m.group(1)
+                    # Format: youtu.be/VIDEO_ID
+                    m2 = re.search(r'youtu\.be/([A-Za-z0-9_-]{11})', url)
+                    if m2:
+                        return m2.group(1)
+    except Exception:
+        pass
+    return None
+
 def get_video_date_score(file_path, db_map):
     """
+    Ambil timestamp upload YouTube untuk sorting.
     Prioritas:
-    1. DB Match (paling akurat)
-    2. Hachoir Metadata (lumayan)
-    3. File System Mtime (fallback)
+      1. Video ID dari .txt companion → lookup DB (PALING AKURAT)
+      2. Hachoir Metadata (creation_date dari file, fallback)
+      3. OS mtime (fallback terakhir)
     """
-    filename = os.path.basename(file_path)
-    base_no_ext = os.path.splitext(filename)[0]
-    
-    # 1. Coba cari di DB Map
-    # Filename format: "01 - Title..." or just "Title..." or "01 - video_ID"
-    # Kita cari apakah ada key di db_map yang menjadi substring dari filename
-    # Ini brute-force sederhana tapi efektif untuk jumlah kecil-medium
-    
-    # Normalisasi filename untuk matching: hapus angka depan "01 - "
-    clean_name = re.sub(r'^\d+\s*-\s*', '', base_no_ext)
-    clean_name = re.sub(r'[_\s]+', ' ', clean_name).strip() # mirip _ascii_only tapi spasi
-    
-    # Coba direct match (agak susah karena sanitasi beda tipis)
-    # Strategy: Token matching? Atau longest substring?
-    # Simple strategy: Check if a significant known title is in the filename
-    
-    best_match_ts = None
-    
-    # Optimasi: kalau map besar, ini lambat. Tapi untuk tool ini oke.
-    # Kita preprocess clean_name biar match dengan sanitize_filename db
-    # db_map key sudah disanitasi _ascii_only.
-    
-    # Coba match dari db_map
-    # Perbaiki logic: kita cari entry db mana yang 'mirip' file ini
-    # Atau sebaliknya.
-    # Cara paling aman: file ini punya 'title' di namanya.
-    # Kita cek apakah title itu ada di DB.
-    
-    # Kita pakai set of tokens untuk fuzzy simple
-    file_tokens = set(clean_name.lower().split())
-    
-    for safe_title, ts in db_map.items():
-        # db key contoh: "This_is_a_video_title"
-        # file contoh: "01 - This_is_a_video_title.mp4" (atau sudah spaces "This is a video title")
-        
-        # Versi replace _ dengan spasi
-        db_title_clean = safe_title.replace('_', ' ').strip()
-        
-        if db_title_clean in clean_name or clean_name in db_title_clean:
-             # Match strong
-             return ts
-             
-        # Jaga-jaga filename kepotong dot dot dot
-        if len(db_title_clean) > 20 and db_title_clean[:20] in clean_name:
-             return ts
+    # 1. Baca video_id dari file .txt pasangan → lookup exact di DB
+    vid_id = _get_video_id_from_txt(file_path)
+    if vid_id and vid_id in db_map:
+        return db_map[vid_id]
 
-    # 2. Fallback Hachoir
+    # 2. Fallback Hachoir (metadata embed di file video)
     if HACHOIR_AVAILABLE:
         try:
             parser = createParser(file_path)
@@ -110,7 +96,7 @@ def get_video_date_score(file_path, db_map):
         except Exception:
             pass
 
-    # 3. Fallback OS
+    # 3. Fallback OS mtime
     return os.path.getmtime(file_path)
 
 def clean_orphans(directory):

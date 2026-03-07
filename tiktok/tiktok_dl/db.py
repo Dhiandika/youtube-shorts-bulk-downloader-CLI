@@ -90,6 +90,23 @@ class TikTokDB:
                     updated_at=excluded.updated_at
             """, (video_id, url, title, uploader_handle, status, file_path, caption_path, now, now))
 
+    def reset_videos(self):
+        """Hapus semua record video (dan user_videos links). Tabel users dipertahankan."""
+        with DB_LOCK, self.conn:
+            self.conn.executescript("""
+                DELETE FROM user_videos;
+                DELETE FROM videos;
+            """)
+
+    def reset_all(self):
+        """Hapus semua data di seluruh tabel."""
+        with DB_LOCK, self.conn:
+            self.conn.executescript("""
+                DELETE FROM user_videos;
+                DELETE FROM videos;
+                DELETE FROM users;
+            """)
+
     def close(self):
         try:
             self.conn.close()

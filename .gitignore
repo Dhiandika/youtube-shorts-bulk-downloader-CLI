@@ -18,3 +18,4 @@ youtube/apikeys.txt
 tiktok.db
 *.mp4
 *.txt
+node_modules

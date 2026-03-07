@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import re
 
 # Force output to UTF-8
 try:
@@ -48,7 +49,15 @@ def check_and_convert_video(video_path, target_mode='reels', force=False):
     if not cap.isOpened(): return video_path, False
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    duration = frames / fps if fps > 0 else 0
     cap.release()
+
+    # Check 0: Duration Validation (Max 180s)
+    if duration > 180 and not force:
+        print(f"  [SKIP] Duration {duration:.1f}s > 180s limit. Skipping conversion.")
+        return video_path, False
 
     # Config user target
     if target_mode == 'feed':
@@ -168,6 +177,28 @@ def sort_files_by_resolution(folder_path, target_mode='reels', force=False):
     # Ekstensi video yang didukung
     video_extensions = ('.mp4', '.avi', '.mov', '.mkv', '.webm')
     
+    # Tracker untuk sequence number di folder tujuan
+    folder_indices = {}
+
+    def get_next_sequence(target_folder):
+        """Lazy load max index dari folder tujuan."""
+        if target_folder not in folder_indices:
+            max_idx = 0
+            if os.path.exists(target_folder):
+                for f in os.listdir(target_folder):
+                    # Cari pattern "NN - Title"
+                    m = re.match(r'^(\d+)\s*-\s*', f)
+                    if m:
+                        try:
+                            val = int(m.group(1))
+                            if val > max_idx: max_idx = val
+                        except: pass
+            folder_indices[target_folder] = max_idx + 1
+        
+        idx = folder_indices[target_folder]
+        folder_indices[target_folder] += 1
+        return idx
+
     # Counter untuk laporan
     moved_count = 0
     converted_count = 0
@@ -176,20 +207,23 @@ def sort_files_by_resolution(folder_path, target_mode='reels', force=False):
     print("-" * 50)
 
     all_files = os.listdir(folder_path)
+    # Sort agar urutan file yang dipindah konsisten (misal berdasarkan nama)
+    all_files.sort() 
     
-    for filename in all_files:
+    for original_filename in all_files:
         # Hanya proses jika itu adalah VIDEO
-        if filename.lower().endswith(video_extensions):
-            video_full_path = os.path.join(folder_path, filename)
+        if original_filename.lower().endswith(video_extensions):
+            video_full_path = os.path.join(folder_path, original_filename)
             
             # --- AUTO CONVERT LOGIC ---
             # Cek dan ubah jika perlu SEBELUM di-sort
             # Catch updated path (if extension changed from .webm to .mp4)
             video_full_path, converted = check_and_convert_video(video_full_path, target_mode, force)
             
+            # Update filename variable because it is used below for destination path logic
+            current_filename = os.path.basename(video_full_path)
+            
             if converted:
-                # Update filename variable because it is used below for destination path logic
-                filename = os.path.basename(video_full_path)
                 converted_count += 1
             # -------------------------------
             
@@ -198,41 +232,84 @@ def sort_files_by_resolution(folder_path, target_mode='reels', force=False):
             if cap.isOpened():
                 w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = frames / fps if fps > 0 else 0
                 cap.release() # Tutup video
                 
-                # Nama folder tujuan berdasarkan resolusi
-                target_folder_name = f"{w}x{h}"
+                # Nama folder tujuan
+                if duration > 180:
+                     # Pisahkan video durasi panjang (> 3 menit)
+                     target_folder_name = "_LongVideos"
+                     # print(f"[REJECT] Duration {duration:.1f}s > 180s. Moving to {_LongVideos}...")
+                else:
+                     target_folder_name = f"{w}x{h}"
+
                 target_folder_path = os.path.join(folder_path, target_folder_name)
                 
                 # Buat folder jika belum ada
                 if not os.path.exists(target_folder_path):
                     os.makedirs(target_folder_path)
                 
+                # --- AUTO-SEQ & RENAME ---
+                # Dapatkan nomor urut selanjutnya untuk folder ini
+                next_seq = get_next_sequence(target_folder_path)
+                
+                # Bersihkan nama file dari index lama (misal "01 - ...")
+                clean_name = re.sub(r'^\d+\s*-\s*', '', current_filename)
+                
+                # Jika nama bersih kosong (karena nama cuma angka?), pakai original
+                if not clean_name: clean_name = current_filename
+
+                # Bentuk nama baru: "01 - Title.mp4"
+                new_filename = f"{next_seq:02d} - {clean_name}"
+                destination_video = os.path.join(target_folder_path, new_filename)
+                
                 # 1. PINDAHKAN VIDEO
-                destination_video = os.path.join(target_folder_path, filename)
                 try:
                     shutil.move(video_full_path, destination_video)
-                    # print(f"[MOVE] Video: {filename} -> /{target_folder_name}")
+                    # print(f"[MOVE] {current_filename} -> {target_folder_name}/{new_filename}")
                 except Exception as e:
-                    print(f"Gagal memindahkan video {filename}: {e}")
+                    print(f"Gagal memindahkan video {current_filename}: {e}")
                     continue
 
                 # 2. CARI DAN PINDAHKAN FILE TXT PASANGANNYA
-                file_basename = os.path.splitext(filename)[0]
-                txt_filename = file_basename + ".txt"
-                txt_full_path = os.path.join(folder_path, txt_filename)
+                # Cari file text original (yang mungkin punya nama lama sebelum convert/rename)
+                # Kita pakai original_filename (sebelum convert) untuk cari txt?
+                # Atau current_filename? Biasanya txt namanya sama dengan video input.
+                # Tapi `check_and_convert` mungkin ganti input path.
                 
-                if os.path.exists(txt_full_path):
-                    destination_txt = os.path.join(target_folder_path, txt_filename)
+                # Strategy: Cek txt dari Base Name *saat ini* (current_filename)
+                # dan juga cek txt dari Base Name *original* (original_filename).
+                
+                base_current = os.path.splitext(current_filename)[0]
+                base_original = os.path.splitext(original_filename)[0]
+                
+                found_txt = None
+                
+                # Cek current (.mp4 base)
+                cand1 = os.path.join(folder_path, base_current + ".txt")
+                # Cek original (.webm base)
+                cand2 = os.path.join(folder_path, base_original + ".txt")
+                
+                if os.path.exists(cand1): found_txt = cand1
+                elif os.path.exists(cand2): found_txt = cand2
+                
+                if found_txt:
+                    # Rename TXT agar sesuai dengan Video Baru (NN - Title.txt)
+                    base_new = os.path.splitext(new_filename)[0]
+                    new_txt_name = base_new + ".txt"
+                    destination_txt = os.path.join(target_folder_path, new_txt_name)
+                    
                     try:
-                        shutil.move(txt_full_path, destination_txt)
+                        shutil.move(found_txt, destination_txt)
                     except Exception as e:
-                        print(f"Gagal memindahkan txt {txt_filename}: {e}")
+                        print(f"Gagal memindahkan txt {os.path.basename(found_txt)}: {e}")
                 
                 moved_count += 1
             else:
                 cap.release()
-                print(f"[SKIP] Video rusak/tidak terbaca: {filename}")
+                print(f"[SKIP] Video rusak/tidak terbaca: {original_filename}")
 
     print("-" * 50)
     print(f"Selesai! Total {moved_count} pasang file dikelompokkan.")
@@ -241,7 +318,7 @@ def sort_files_by_resolution(folder_path, target_mode='reels', force=False):
 # --- PENGGUNAAN ---
 if __name__ == "__main__":
     # Ganti dengan path folder kamu
-    lokasi_folder = r"new_week/1080x1920"
+    lokasi_folder = r"new_week"
     
     print("Pilih Mode Target:")
     print("1. Reels / Shorts / TikTok (9:16) [Default]")

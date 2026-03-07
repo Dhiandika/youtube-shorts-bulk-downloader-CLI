@@ -20,7 +20,7 @@ from typing import List, Optional, Tuple
 # =========================
 CONFIG = {
     # Folder yang berisi video & caption .txt
-    "FOLDER": "tiktok_downloads",
+    "FOLDER": "anime_tiktok_downloads_v2",
 
     # Ekstensi video yang akan diproses
     "VIDEO_EXTS": [".mp4", ".webm", ".mkv", ".mov"],

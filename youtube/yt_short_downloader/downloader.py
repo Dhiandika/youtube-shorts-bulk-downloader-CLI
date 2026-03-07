@@ -15,6 +15,7 @@ from .ytdlp_tools import (
     detect_best_hd_selector, probe_resolution_bitrate,
     upscale_video_if_needed, enhance_video,
 )
+from .pytube_downloader import download_pytube
 
 __all__ = ["download_video", "download_videos"]
 
@@ -184,58 +185,89 @@ def download_video(
     # MAJOR STRATEGY OVERHAUL (Anti-403 & 1080p Enforcement)
     # ---------------------------------------------------------
     
-    # Format Strings
-    FMT_1080_AVC   = "bv*[height>=1080][vcodec^=avc]+ba[ext=m4a]"  # Best (Native)
-    FMT_1080_ANY   = "bv*[height>=1080]+ba"                        # Accept VP9 (Will convert)
-    FMT_1080_MERGED= "b[height>=1080]"                             # Pre-merged
-    FMT_720_AVC    = "bv*[height>=720][vcodec^=avc]+ba"            # Fallback
+    # Format Strings (Prioritize 1080p > 720p, AVC > VP9)
+    # Chain: 1080p AVC -> 1080p Any -> 720p AVC -> 720p Any
+    # STRICT: Never accept < 720p
+    FMT_CHAIN = (
+        "bv*[height>=1080][vcodec^=avc]+ba[ext=m4a]/"  # 1. 1080p AVC
+        "bv*[height>=1080]+ba/"                        # 2. 1080p Any
+        "bv*[height>=720][vcodec^=avc]+ba[ext=m4a]/"   # 3. 720p AVC
+        "bv*[height>=720]+ba"                          # 4. 720p Any
+    )
 
     strategies = [
-        # STRATEGY 1: "The Clean Android"
+        # STRATEGY 1: "The Clean Android" (Default)
         {
-            "name": "Android Mobile API",
+            "name": "Android Mobile API (HD Only)",
             "args": [
-                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '-f', FMT_CHAIN,
                 '--extractor-args', 'youtube:player_client=android'
             ]
         },
-        
-        # STRATEGY 2: "Browser Bypass" (No iOS)
+
+        # STRATEGY 2: "Android Creator"
         {
-            "name": "Web Client (Limit iOS)", 
+            "name": "Android Creator API (HD Only)",
             "args": [
-                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
-                '--extractor-args', 'youtube:player_client=web,-ios' 
+                '-f', FMT_CHAIN,
+                '--extractor-args', 'youtube:player_client=android_creator'
             ]
         },
         
-        # STRATEGY 3: "Force IPv4 + Single Thread"
+        # STRATEGY 3: "Web Client"
+        {
+            "name": "Web Client (HD Only)", 
+            "args": [
+                '-f', FMT_CHAIN,
+                '--extractor-args', 'youtube:player_client=web,-ios' 
+            ]
+        },
+
+        # STRATEGY 4: "TV Client"
+        {
+            "name": "TV Client API (HD Only)",
+            "args": [
+                '-f', FMT_CHAIN,
+                '--extractor-args', 'youtube:player_client=tv'
+            ]
+        },
+        
+        # STRATEGY 5: "Force IPv4"
         {
             "name": "IPv4 + Single Thread",
             "args": [
-                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '-f', FMT_CHAIN,
                 '--force-ipv4',
                 '-N', '1' 
             ]
         },
 
-        # STRATEGY 4: "Cookie Injection" (Chrome) 
+        # STRATEGY 6: "Cookie Injection"
         {
             "name": "Chrome Cookies (Authenticated)",
             "args": [
-                '-f', f"{FMT_1080_AVC}/{FMT_1080_ANY}",
+                '-f', FMT_CHAIN,
                 '--cookies-from-browser', 'chrome',
                 '--force-ipv4'
             ]
         },
         
-        # STRATEGY 5: "The Tank" (Pre-merged + No Cache)
+        # STRATEGY 7: "The Tank"
         {
-            "name": "Pre-merged Legacy + No Cache",
+            "name": "Pre-merged Legacy (HD Only)",
             "args": [
-                '-f', f"{FMT_1080_MERGED}/{FMT_1080_ANY}/{FMT_720_AVC}",
+                '-f', "b[height>=1080]/b[height>=720]", # STRICT NO 'b' fallback
                 '--rm-cache-dir',
                 '--force-ipv4'
+            ]
+        },
+
+        # STRATEGY 8: "IOS Client"
+        {
+            "name": "IOS Client (HD Only)",
+            "args": [
+                '-f', FMT_CHAIN,
+                '--extractor-args', 'youtube:player_client=ios'
             ]
         }
     ]
@@ -250,6 +282,7 @@ def download_video(
         except: pass
 
     success = False
+    last_file_path = None
     
     try:
         # GLOBAL RETRY LOOP
@@ -258,8 +291,6 @@ def download_video(
             
             s_name = strat["name"]
             s_args = strat["args"]
-            
-            # _log_error(f"[ATTEMPT] Strategy: {s_name}...", output_path)
             
             args = (
                 _base_args()
@@ -278,25 +309,44 @@ def download_video(
                 if not final_file or os.path.getsize(final_file) < 1000:
                     _purge_tmp_parts()
                     continue # Silent fail, next strategy
+
+                last_file_path = final_file
                 
                 # 3. VALIDATE RESOLUTION & QUALITY
+                # STRICT RULE: 
+                # - If < 720p: REJECT & DELETE.
+                # - If >= 720p and < 1080p: UPSCALE.
+                # - If >= 1080p: KEEP.
+                
                 whb = probe_resolution_bitrate(final_file)
                 if whb:
                     w, h, br = whb
                     short_dim = min(w, h)
                     
-                    # REJECT 360p/480p (Anything < 720p)
-                    is_trash = short_dim < 400
-                    
-                    if is_trash:
-                        _log_error(f"[REJECT] {s_name} -> {w}x{h} (TRASH). Deleting...", output_path)
+                    if short_dim < 720:
+                        # REJECT 360p/480p
+                        _log_error(f"[REJECT] Got {w}x{h} (< 720p). Trash. Strategy {s_name} failed.", output_path)
                         try: os.remove(final_file)
                         except: pass
                         _purge_tmp_parts()
-                        time.sleep(2)
-                        continue
+                        time.sleep(1)
+                        continue # Try next strategy
                     
-                    # 4. CONVERT VP9 -> H.264 IF NEEDED
+                    elif short_dim < 1000: # 720p - 999p range
+                        # UPSCALE ALLOWED (720 -> 1080)
+                        _log_error(f"[INFO] Got {w}x{h} (720p). Upscaling to 1080p...", output_path)
+                        try:
+                            up_path = upscale_video_if_needed(final_file, 1080)
+                            if up_path and os.path.exists(up_path):
+                                if up_path != final_file:
+                                    try: os.remove(final_file)
+                                    except: pass
+                                final_file = up_path
+                                last_file_path = final_file
+                        except Exception as e:
+                            _log_error(f"[UPSCALE FAIL] {e}. Keeping 720p original.", output_path)
+                    
+                    # 4. CONVERT VP9 -> H.264 IF NEEDED (Same logic as before)
                     try:
                         import sys
                         current_dir = os.path.dirname(os.path.abspath(__file__)) 
@@ -310,6 +360,7 @@ def download_video(
                         
                         if converted and os.path.exists(new_path):
                             final_file = new_path
+                            last_file_path = final_file
                             
                     except Exception as e:
                         pass
@@ -332,8 +383,95 @@ def download_video(
                 
     finally:
         _rm_tree(tmp_dir)
-        # Final FORCE cleanup untuk file .part yang bandel di folder utama
         cleanup_partial_downloads(output_path, f"{index:02d} - {safe_title}")
+
+    # --- PYTUBE FALLBACK (Last Resort) ---
+    if not success:
+        _log_error(f"[WARN] yt-dlp strategies exhaustion. Attempting Pytube Fallback...", output_path)
+        # Construct filename similar to what we wanted
+        # We need a safe filename without extension for pytube wrapper
+        pytube_prefix = f"{index:02d} - {safe_title} - {safe_channel}"
+        
+        try:
+            if download_pytube(video_url, output_path, pytube_prefix):
+                 # We need to set last_file_path so the final check passes
+                 # Pytube saves as .mp4
+                 expected_pytube_file = os.path.join(output_path, f"{pytube_prefix}.mp4")
+                 
+                 if os.path.exists(expected_pytube_file):
+                     # === VALIDATION BLOCK (Must match main loop logic) ===
+                     final_file = expected_pytube_file
+                     whb = probe_resolution_bitrate(final_file)
+                     
+                     pytube_success = True
+                     if whb:
+                        w, h, br = whb
+                        short_dim = min(w, h)
+                        
+                        # 1. Reject Low Res (< 720p)
+                        if short_dim < 720:
+                            _log_error(f"[REJECT-PYTUBE] Got {w}x{h} (< 720p). Trash.", output_path)
+                            try: os.remove(final_file)
+                            except: pass
+                            pytube_success = False
+                        
+                        # 2. Upscale (720 -> 1080)
+                        elif short_dim < 1000:
+                            _log_error(f"[INFO-PYTUBE] Got {w}x{h} (720p). Upscaling...", output_path)
+                            try:
+                                up_path = upscale_video_if_needed(final_file, 1080)
+                                if up_path and os.path.exists(up_path):
+                                    if up_path != final_file:
+                                        try: os.remove(final_file)
+                                        except: pass
+                                    final_file = up_path
+                            except Exception as e:
+                                _log_error(f"[UPSCALE FAIL] {e}. Keeping original.", output_path)
+
+                        # 3. Ratio Check (9:16 Enforcement)
+                        if pytube_success:
+                             try:
+                                import sys
+                                current_dir = os.path.dirname(os.path.abspath(__file__)) 
+                                parent_dir = os.path.dirname(current_dir)
+                                if parent_dir not in sys.path: sys.path.append(parent_dir)
+                                import cek_resolusi
+                                
+                                new_path, converted = cek_resolusi.check_and_convert_video(
+                                    final_file, target_mode='reels', force=False
+                                )
+                                if converted and os.path.exists(new_path):
+                                    final_file = new_path
+                             except ImportError:
+                                pass # cek_resolusi might not be available
+                             except Exception as e:
+                                _log_error(f"[RATIO CHECK FAIL] {e}", output_path)
+
+                     if pytube_success:
+                         success = True
+                         last_file_path = final_file
+                         _SESSION.note_success()
+                         _log_error(f"[SUCCESS] Pytube Saved & Validated: {last_file_path}", output_path)
+                     else:
+                         _log_error(f"[FAIL] Pytube validation failed.", output_path)
+
+        except Exception as e:
+            _log_error(f"[PYTUBE FAIL] {e}", output_path)
+
+
+    # --- FINAL SAFETY CHECK ---
+    # Ensure file ACTUALLY exists before reporting success
+    if success:
+        if not (last_file_path and os.path.exists(last_file_path) and os.path.getsize(last_file_path) > 1000):
+            success = False
+            _log_error(f"[FATAL] Phantom Success detected. File missing: {last_file_path}", output_path)
+
+    if not success:
+        # LOG SKIP
+        try:
+            with open(os.path.join(output_path, "skipped.txt"), "a", encoding="utf-8") as fs:
+                fs.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] SKIP {video_id} - {video_title} - {video_url}\n")
+        except: pass
 
     return success
 
@@ -343,7 +481,7 @@ def download_videos(
     quality: str, file_format: str,
     preassigned_indices: Optional[List[int]]=None,
     on_success: Optional[Callable[[Dict,int],None]]=None,
-    max_workers: int = 1,
+    max_workers: int = 3,
 ) -> None:
     os.makedirs(output_path, exist_ok=True)
 
