@@ -1,88 +1,74 @@
 import os
 import re
 import json
-import asyncio
-from bilibili_api import user as bili_user, sync, Credential
+import subprocess
 from .logger import logger
-from .config import COOKIES_JSON_FILE
-
-def load_credential_from_json():
-    """
-    Load SESSDATA, bili_jct, buvid3, DedeUserID from cookies.json
-    Return Credential object or None
-    """
-    if not os.path.exists(COOKIES_JSON_FILE):
-        return None
-        
-    sessdata = ""
-    bili_jct = ""
-    buvid3 = ""
-    dedeuserid = ""
-    
-    try:
-        with open(COOKIES_JSON_FILE, 'r', encoding='utf-8') as f:
-            cookies = json.load(f)
-            for c in cookies:
-                name = c.get('name', '')
-                val = c.get('value', '')
-                if name == 'SESSDATA': sessdata = val
-                elif name == 'bili_jct': bili_jct = val
-                elif name == 'buvid3': buvid3 = val
-                elif name == 'DedeUserID': dedeuserid = val
-                
-        if sessdata or bili_jct:
-            return Credential(sessdata=sessdata, bili_jct=bili_jct, buvid3=buvid3, dedeuserid=dedeuserid)
-    except Exception as e:
-        logger.error(f"Failed to load credentials from {COOKIES_JSON_FILE}: {e}")
-        
-    return None
-
-async def fetch_videos_async(uid, credential_obj):
-    u = bili_user.User(uid=uid, credential=credential_obj)
-    
-    video_urls = []
-    page = 1
-    
-    # Fetch the first page of videos from the user's space
-    try:
-        res = await u.get_videos(pn=page)
-        vlist = res.get('list', {}).get('vlist', [])
-        
-        for v in vlist:
-            bvid = v.get('bvid')
-            if bvid:
-                video_urls.append(f"https://www.bilibili.com/video/{bvid}")
-    except Exception as e:
-        logger.error(f"bilibili-api-python fetching failed: {e}")
-        raise e
-        
-    return video_urls
+from .config import COOKIES_JSON_FILE, COOKIES_FILE
+from .cookie_parser import get_cookie_file
 
 def get_bilibili_channel_videos_fallback(channel_url):
     """
-    Fallback method to fetch Bilibili channel videos using bilibili-api-python.
+    Fallback method to fetch Bilibili channel videos using specialized yt-dlp subprocess 
+    configured to evade Bilibili's Error 412 server blocks.
     """
-    logger.info(f"Using bilibili-api-python fallback to scan channel: {channel_url}")
+    logger.info(f"Initiating Tactical yt-dlp Fallback Scanner for: {channel_url}")
 
-    # Extract user ID (UID) from URL
+    # Extract user ID (UID) from URL just in case we need it for logs
     match = re.search(r'space\.bilibili\.com/(\d+)', channel_url)
-    if not match:
-        logger.error(f"Could not extract UID from URL: {channel_url}")
-        return []
+    channel_name = channel_url
+    if match:
+        channel_name = f"UID_{match.group(1)}"
 
-    uid = int(match.group(1))
-    
-    credential = load_credential_from_json()
-    if credential:
-        logger.info("Found bilibili-api credentials inside cookies.json. Authenticating scanner...")
-    else:
-        logger.warning(f"No cookies.json found at {COOKIES_JSON_FILE}. Scanning channel anonymously (may fail with -400)...")
-        
+    video_urls = []
     try:
-        # Run async function synchronously
-        urls = sync(fetch_videos_async(uid, credential))
-        logger.info(f"bilibili-api scanner found {len(urls)} videos.")
-        return urls
+        # We spawn a totally isolated yt-dlp instance with parameters to spoof an android client/slow down requests
+        # --extractor-args "bilibili:player_client=android" or simply dumping flat JSON
+        cmd = [
+            'yt-dlp',
+            '--flat-playlist',
+            '--dump-json',
+            '--extractor-retries', '5',
+            '--sleep-requests', '0.5'
+        ]
+        
+        cookie_path = get_cookie_file()
+        if cookie_path:
+            cmd.extend(['--cookies', cookie_path])
+            
+        cmd.append(channel_url)
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+        
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for line in lines:
+                if not line.strip(): continue
+                try:
+                    data = json.loads(line)
+                    url = data.get('url') or data.get('webpage_url')
+                    _id = data.get('id')
+                    
+                    if url:
+                        video_urls.append(url)
+                    elif _id:
+                        video_urls.append(f"https://www.bilibili.com/video/{_id}")
+                        
+                    # Attempt to grab the channel name dynamically from the first video if possible
+                    if channel_name.startswith("UID_") and data.get('uploader'):
+                        channel_name = data.get('uploader')
+                        
+                except json.JSONDecodeError:
+                    continue
+                    
+        else:
+            logger.error(f"Tactical subprocess scanner also failed. Output: {result.stderr[:300]}")
+            
     except Exception as e:
-        logger.error(f"Fallback bilibili-api scraper failed for {channel_url}: {str(e)}")
-        return []
+        logger.error(f"Tactical fallback crashed for {channel_url}: {str(e)}")
+        
+    if video_urls:
+        logger.info(f"Tactical scanner successfully penetrated block: Found {len(video_urls)} videos for {channel_name}.")
+    else:
+        logger.warning(f"Tactical scanner found no videos (Block intact or channel empty).")
+        
+    return channel_name, video_urls
